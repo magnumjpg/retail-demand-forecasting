@@ -316,6 +316,8 @@ contract; 7 figures; **13 tests**.
   METHOD.md                 models, features, conformal layer, metrics
   LIMITATIONS.md            what the design cannot answer
   DECISIONS.md              decisions, alternatives, blockers
+  ANALYSIS_LOG.md           chronological record, including the failures
+  RED_TEAM.md               hostile objections, answered or conceded
   requirements.txt
   src/
     config.py               paths, filters, origins, cost assumptions
