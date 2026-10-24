@@ -247,8 +247,10 @@ uses evaluation information to select the baseline. The baseline is not a pre-re
 policy.
 
 **Consequence.** "23.88% versus the best point rule" is not "23.88% versus the company's current
-policy". A real incumbent could be better or worse. The oracle (order realised demand, zero cost)
-is a bound, not an achievable policy, and is labelled as such.
+policy". A real incumbent could be better or worse. A stronger post-hoc comparator is recorded as
+well: the best point model across all seven models at the central case is LightGBM Tweedie point,
+and the SES quantile saves **18.53%** against it. The oracle (order realised demand, zero cost) is a
+bound, not an achievable policy, and is labelled as such.
 
 **What would fix it.** Pre-register one incumbent (e.g. SES point) or evaluate against the actual
 replenishment policy, which the dataset does not contain.

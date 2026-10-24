@@ -365,7 +365,10 @@ would conflate the value of the distribution with the value of the model.
 conservative (the baseline is as strong as it can be on this sample), but it uses evaluation
 information to select the comparator. It is not a pre-registered incumbent. The number to quote is
 "versus SES point on these cells", not "versus the company's current policy". The oracle is
-labelled clairvoyant and its zero cost is not an achievable result.
+labelled clairvoyant and its zero cost is not an achievable result. A second, stronger comparator
+is also recorded: the best **point model across all seven models** at the central case is
+LightGBM Tweedie point, and the SES quantile saves **18.53%** against it
+(`headline.decision.central_case_quantile.savings_vs_best_point_all_pct`).
 
 ---
 

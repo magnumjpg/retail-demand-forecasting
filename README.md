@@ -172,8 +172,9 @@ absolute cost level is not a claim about the company.** Savings are versus the b
 At the central case the quantile policy raises fill from **71.0%** (SES point) to **84.3%** and
 cuts stockouts, at the cost of more inventory. Holding cost is 64,177.60 and stockout cost
 93,426.39 of the SES-quantile total 157,603.99; under this cost ratio the stockout side still
-dominates. Note that ordering the **median** (LightGBM median point) has a fill rate of only
-**54.7%** and destroys value: a good MASE is not a good ordering rule.
+dominates. Against the strongest point model anywhere in the table — LightGBM Tweedie point —
+the SES quantile still saves **18.53%**. Note that ordering the **median** (LightGBM median point)
+has a fill rate of only **54.7%** and destroys value: a good MASE is not a good ordering rule.
 
 ### Cost-ratio and lead-time sweep
 
