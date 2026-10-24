@@ -248,7 +248,7 @@ conservative for the probabilistic policy (the baseline is as strong as it can b
 uses evaluation information to select the baseline. The baseline is not a pre-registered incumbent
 policy.
 
-**Consequence.** "23.88% versus the best point rule" is not "23.88% versus the company's current
+**Consequence.** "23.88% versus the best simple point rule (SES)" is not "23.88% versus the company's current
 policy". A real incumbent could be better or worse. A stronger post-hoc comparator is recorded as
 well: the best point model across all seven models at the central case is LightGBM Tweedie point,
 and the SES quantile saves **18.53%** against it. The oracle (order realised demand, zero cost) is a

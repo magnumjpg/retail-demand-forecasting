@@ -210,6 +210,13 @@ Savings are always relative to the **best simple point rule** among historical m
 naive, SES and Croston/SBA, at the same L and cost ratio. In every one of the 168
 model × policy × L × ratio cells that baseline is SES (point).
 
+A second comparator is recorded for every cell: the **strongest point model overall** (the cheapest
+point policy in that cell; LightGBM Tweedie at the central case). The saving against it is reported
+without a CI. The bootstrap below is defined against SES point, so attaching that interval to a
+different difference would be a fabricated CI. The two benchmarks answer different questions — "does
+the distribution beat a simple rule?" and "does it beat the best point model I have?" — and the
+README reports both, including the cells where the second answer is negative.
+
 The 95% CI is a bootstrap over SKUs: 500 resamples with replacement of the per-SKU cost vectors,
 recomputing the difference in mean cost. It reflects cross-sectional heterogeneity, **not**
 uncertainty over time, model specification or cost assumptions. The cost assumptions are swept
