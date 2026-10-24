@@ -12,11 +12,15 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 
 ## 1. The answer in one page
 
-1. **Probabilistic ordering is worth real money, but only when the cost ratio is asymmetric.**
-   At a 4-week lead time and `Cu/Co = 9` (critical ratio 0.90), ordering at the 90th percentile
-   of an SES forecast cuts total cost by **23.9%** versus the best point rule (95% bootstrap CI
-   over SKUs: **21.9% to 26.7%**). At the most asymmetric grid point (`L = 8`, `Cu/Co = 19`)
-   the saving is **47.8%** (CI **45.7% to 50.7%**). At `Cu/Co = 1` the gain is **4.2%** or less.
+1. **Probabilistic ordering is worth real money at high cost ratios, and the SES policy's value is
+   concentrated there.** At a 4-week lead time and `Cu/Co = 9` (critical ratio 0.90), ordering at
+   the 90th percentile of an SES forecast cuts total cost by **23.9%** versus the best point rule
+   (95% bootstrap CI over SKUs: **21.9% to 26.7%**). At the most asymmetric grid point (`L = 8`,
+   `Cu/Co = 19`) the saving is **47.8%** (CI **45.7% to 50.7%**). For SES, at `Cu/Co = 1` the gain
+   is **4.2%** or less (L=2: 4.22%, L=4: 3.71%, L=8: 1.65%) and at ratio 3 it is at most **4.74%**.
+   The grid's largest ratio-1 saving is **14.21%** (LightGBM median, L=4), but that model falls to
+   **1.6%** at ratio 3, so it is not a stable symmetric-cost result; the SES pattern is the robust
+   one.
 
 2. **The simplest calibrated model wins the decision, not the most complex one.**
    At the central case, SES + conformal quantiles saves **23.9%**, LightGBM-Tweedie + conformal
@@ -186,10 +190,11 @@ Saving of the SES + conformal quantile policy, % versus SES point (95% CI in `re
 | 4 weeks | 3.71 | 2.60 | 23.88 | 43.00 |
 | 8 weeks | 1.65 | 4.74 | 28.40 | 47.80 |
 
-The value is driven by asymmetry, not by the forecast alone: at `Cu/Co = 1` the critical ratio
-is 0.50 and a point forecast is already close to optimal. As `Cu/Co` rises, the penalty for
-under-ordering dominates and the upper quantiles earn their keep. `fig4_cost_vs_ratio.png`
-shows all models; seasonal naive is off-scale at −73% to −136%.
+The value is driven by asymmetry for the SES policy: at `Cu/Co = 1` the critical ratio
+is 0.50 and an SES point forecast is already close to optimal (4.22% or less). The LightGBM median
+is the exception in that corner (14.21% at L=4, ratio 1) but falls to 1.6% at ratio 3, so its gain
+is not a stable asymmetry result. `fig4_cost_vs_ratio.png` shows all models; seasonal naive is
+off-scale at −73% to −136%.
 
 Best cell per lead time (all at `Cu/Co = 19`): L=2 **39.25%** [36.74, 42.69], L=4 **43.00%**
 [40.86, 46.66], L=8 **47.80%** [45.67, 50.71]. Higher lead times need more cover, so a

@@ -36,9 +36,11 @@ margin, or salvage value.
 
 **Consequence.** Absolute costs (`157,603.99` at the central SES-quantile cell, for example) are
 not a P&L statement and should not be quoted as money. Only the *ordering* of policies at the same
-`L` and ratio is meaningful. A symmetric cost ratio (`Cu/Co = 1`, critical ratio 0.5) produces
-savings of at most **4.2%**; the headline depends on asymmetry. Real margin, markdown, salvage,
-fixed ordering cost, MOQ and capacity are absent.
+`L` and ratio is meaningful. For the SES quantile policy, a symmetric cost ratio (`Cu/Co = 1`,
+critical ratio 0.5) produces savings of at most **4.22%** (and **1.65%** at L=8). The grid's
+largest ratio-1 saving is **14.21%** (LightGBM median, L=4), but that model is only **1.6%** at
+ratio 3, so the symmetric-cost result is model-specific, not a general gain. Real margin, markdown,
+salvage, fixed ordering cost, MOQ and capacity are absent.
 
 **What would fix it.** Finance-owned unit costs and margins, observed lead-time distributions, and
 a cost model with fixed order cost and salvage. The sweep in `decision.csv` is the honest
@@ -335,9 +337,11 @@ and out-of-sample service monitoring.
 
 The result is conditional, and it is worth stating the conditions under which it would fail:
 
-1. **Costs near symmetric.** At `Cu/Co = 1` (critical ratio 0.5) the best saving in the sweep is
-   **4.22%**, and the sign is not stable across lead times. If the true ratio is near 1, the case
-   for probabilistic ordering is weak.
+1. **Costs near symmetric.** For the SES quantile policy at `Cu/Co = 1` (critical ratio 0.5) the
+   saving is at most **4.22%** and falls to **1.65%** at L=8, so the recommended policy's case is
+   weak near symmetric costs. The grid's largest ratio-1 saving is **14.21%** (LightGBM median,
+   L=4), but that model is only **1.6%** at ratio 3; the symmetric-cost gain is not stable. If the
+   true ratio is near 1, the evidence for a robust probabilistic gain is weak.
 2. **True lost sales.** If stockouts are common and demand is heavily censored, observed zeros
    understate demand and the evaluated stockout cost understates the true cost. The ranking of
    policies could change once latent demand is modelled.

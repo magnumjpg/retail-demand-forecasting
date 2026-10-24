@@ -340,10 +340,11 @@ CR = Cu / (Cu + Co) ∈ {0.5, 0.75, 0.9, 0.95}
 revenue-based margin (not observed); a fixed currency holding cost (ignores that a £1 item and a
 £50 item do not cost the same to hold); estimating `Co` from the data (impossible).
 
-**Consequence.** Absolute costs scale with price and L and are not a P&L claim. At `Cu/Co = 1`
-the critical ratio is 0.5 and the saving is at most 4.22%; the headline depends on asymmetry. The
-sweep, not one cell, is the evidence. The central case (L=4, ratio 9) is a reporting convention,
-not an estimate of the retailer's true costs.
+**Consequence.** Absolute costs scale with price and L and are not a P&L claim. For the SES
+quantile policy, at `Cu/Co = 1` the critical ratio is 0.5 and the saving is at most 4.22%; the
+grid's maximum at ratio 1 is 14.21% (LightGBM median, L=4), but that model drops to 1.6% at ratio
+3. The sweep, not one cell, is the evidence. The central case (L=4, ratio 9) is a reporting
+convention, not an estimate of the retailer's true costs.
 
 ---
 
