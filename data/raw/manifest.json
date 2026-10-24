@@ -1,0 +1,19 @@
+{
+  "source": "local",
+  "xlsx_sha256": "bcbe73b35f5b7babf197fb0cb983a11f5d9ff929078d4aa53d171b1f2df2e980",
+  "retrieved_utc": "2026-10-24T22:38:51+00:00",
+  "file": "data\\raw\\online_retail_II.xlsx",
+  "bytes": 45622278,
+  "sheets": [
+    "Year 2009-2010",
+    "Year 2010-2011"
+  ],
+  "sheet_rows": {
+    "Year 2009-2010": 525461,
+    "Year 2010-2011": 541910
+  },
+  "expected_sheets": [
+    "Year 2009-2010",
+    "Year 2010-2011"
+  ]
+}

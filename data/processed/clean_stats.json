@@ -1,0 +1,135 @@
+{
+  "raw_rows_two_sheets": 1067371,
+  "raw_sheets": [
+    "Year 2009-2010",
+    "Year 2010-2011"
+  ],
+  "duplicate_rows_removed": 34335,
+  "rows_after_cleaning": 972068,
+  "pct_rows_kept": 91.0712,
+  "gross_positive_revenue_raw": 20972968.14,
+  "revenue_after_cleaning": 18898202.39,
+  "units_after_cleaning": 10798141,
+  "skus_after_cleaning": 4675,
+  "cancellations": {
+    "rows": 19104,
+    "pct_rows": 1.8493,
+    "units": -476819.0,
+    "revenue": -1462050.61
+  },
+  "negative_quantity_non_cancellation_rows": 755,
+  "weeks_total": 104,
+  "weeks_partial_dropped": [
+    "2009-11-30",
+    "2011-12-05"
+  ],
+  "weeks_first": "2009-12-07",
+  "weeks_last": "2011-11-28",
+  "test_weeks": 26,
+  "first_origin_week_index": 77,
+  "first_origin_week": "2011-05-30",
+  "skus_by_positive_weeks_full_sample": {
+    "8": 3995,
+    "12": 3645,
+    "26": 2753
+  },
+  "skus_by_positive_weeks_pre_origin": {
+    "8": 3482,
+    "12": 3186,
+    "26": 2286
+  },
+  "universe_skus_min_pos_weeks": 8,
+  "model_skus_min_pos_weeks": 12,
+  "n_model_skus": 3186,
+  "panel_rows": 415480,
+  "zero_demand_share_universe": 0.5452,
+  "zero_demand_share_model_skus": 0.4693,
+  "median_positive_weeks_per_sku": 41.0,
+  "bulk_orders": {
+    "n_invoices_clean": 38459,
+    "top_1pct_invoice_share_units": 0.2046,
+    "top_0_5pct_invoice_share_units": 0.1563,
+    "top_1pct_invoice_share_revenue": 0.1422,
+    "largest_invoice_units": 87167.0,
+    "top_1pct_invoice_share_units_incl_cancellations": 0.2601
+  },
+  "share_orders_without_customer_id": 0.2277,
+  "audit": [
+    {
+      "step": "duplicate_rows_sheet_overlap",
+      "rows_before": 1067371,
+      "rows_dropped": 34335,
+      "pct_rows_dropped": 3.2167821685243467,
+      "units_dropped": 198713.0,
+      "revenue_dropped": 431716.87,
+      "note": "identical rows present in both yearly sheets",
+      "pct_gross_revenue_dropped": 2.0584
+    },
+    {
+      "step": "missing_stockcode_or_invoicedate",
+      "rows_before": 1033036,
+      "rows_dropped": 0,
+      "pct_rows_dropped": 0.0,
+      "units_dropped": 0.0,
+      "revenue_dropped": 0.0,
+      "note": "",
+      "pct_gross_revenue_dropped": 0.0
+    },
+    {
+      "step": "cancellations_C_invoice",
+      "rows_before": 1033036,
+      "rows_dropped": 19104,
+      "pct_rows_dropped": 1.849306316527207,
+      "units_dropped": -476819.0,
+      "revenue_dropped": -1462050.61,
+      "note": "returns kept aside; see cancellation_summary",
+      "pct_gross_revenue_dropped": -6.9711
+    },
+    {
+      "step": "non_product_codes",
+      "rows_before": 1013932,
+      "rows_dropped": 9002,
+      "pct_rows_dropped": 0.8878307421010482,
+      "units_dropped": -56668.0,
+      "revenue_dropped": 674892.158,
+      "note": "postage/manual/adjustment/DCGS/GIFT/TEST + codes outside ^[0-9]{4,6}[A-Z]{0,2}$",
+      "pct_gross_revenue_dropped": 3.2179
+    },
+    {
+      "step": "quantity_le_zero",
+      "rows_before": 1004930,
+      "rows_dropped": 755,
+      "pct_rows_dropped": 0.07512961101768283,
+      "units_dropped": -313696.0,
+      "revenue_dropped": 0.0,
+      "note": "negative lines on non-C invoices are manual adjustments",
+      "pct_gross_revenue_dropped": 0.0
+    },
+    {
+      "step": "price_le_zero",
+      "rows_before": 1004175,
+      "rows_dropped": 961,
+      "pct_rows_dropped": 0.09570045061866705,
+      "units_dropped": 69188.0,
+      "revenue_dropped": 0.0,
+      "note": "zero/negative price lines carry no revenue information",
+      "pct_gross_revenue_dropped": 0.0
+    },
+    {
+      "step": "partial_calendar_weeks",
+      "rows_before": 1003214,
+      "rows_dropped": 31146,
+      "pct_rows_dropped": 3.10462174570929,
+      "units_dropped": 389633.0,
+      "revenue_dropped": 744489.76,
+      "note": "first and last calendar weeks are incomplete and excluded",
+      "pct_gross_revenue_dropped": 3.5498
+    }
+  ],
+  "assumptions": [
+    "Weeks are ISO weeks (Mon-Sun). The first and last calendar weeks are partial and dropped.",
+    "Cancellations are returns, not negative demand; they are excluded, never netted.",
+    "Demand is units shipped (positive Quantity), not revenue.",
+    "Zeros in the spine are observed no-sales; with no stockout data they may hide lost demand."
+  ]
+}

@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------- raw data
+# The 45 MB workbook is downloaded and verified by src/download_data.py.
+# Only the hash/size manifest is committed.
+data/raw/*
+!data/raw/manifest.json
+
+# ------------------------------------------------------ intermediate caches
+# Rebuilt by `python src/run_all.py`; not deliverables, and large.
+data/processed/transactions_raw.parquet
+data/processed/forecasts.parquet
+data/processed/residual_quantiles.csv
+data/processed/_backtest.json
+data/processed/_decision.json
+
+# ------------------------------------------------------------------- python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+
+# --------------------------------------------------------------- notebooks
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------------ editors
+.vscode/
+.idea/
+*.swp
+
+# ----------------------------------------------------------------------- os
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# -------------------------------------------------------------- local noise
+# Ad-hoc scratch runs, not part of the pipeline.
+outputs/_scratch/
+*.log
+
+# Ad-hoc console captures (not produced by the pipeline)
+outputs/run_all_log.txt
