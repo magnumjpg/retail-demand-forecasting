@@ -182,32 +182,51 @@ def fig3_calibration(fc, grids):
 
 
 def fig4_cost_vs_ratio(dec):
-    fig, axes = plt.subplots(1, 3, figsize=(11, 3.6), sharey=True)
+    """Two honest comparators.
+
+    Top row: saving vs the best *simple* point rule (SES in every cell), with the
+    bootstrap CI, because that is what the bootstrap in decision.py estimates.
+    Bottom row: saving vs the strongest point model anywhere in the table
+    (LightGBM-Tweedie point).  Point estimates only: the bootstrap is not defined
+    against that comparator, so drawing a CI band there would be fabricated.
+    """
+    fig, axes = plt.subplots(2, 3, figsize=(11, 6.8), sharex="col")
     q = dec[(dec["policy"] == "quantile")]
     floor = -65.0
-    for ax, L in zip(axes, C.LEAD_TIMES):
-        for model in MODELS:
-            s = q[(q["lead_time"] == L) & (q["model"] == model)].sort_values("cost_ratio")
-            ax.plot(s["cost_ratio"], s["savings_vs_best_simple_point_pct"],
-                    marker="o", ms=3, color=COLORS[model], label=NICE[model], lw=1.2)
-            ax.fill_between(s["cost_ratio"], s["ci_low_pct"], s["ci_high_pct"],
-                            color=COLORS[model], alpha=0.08)
-        sn = q[(q["lead_time"] == L) & (q["model"] == "seasonal_naive")]
-        lo = float(sn["savings_vs_best_simple_point_pct"].min())
-        ax.axhline(0, color="k", lw=0.8, ls="--")
-        ax.set_xscale("log")
-        ax.set_xticks(list(C.COST_RATIOS))
-        ax.set_xticklabels([str(r) for r in C.COST_RATIOS])
-        ax.set_ylim(floor, 55)
-        ax.set_title(f"lead time = {L} weeks")
-        ax.set_xlabel("Cu / Co (underage / holding cost)")
-        if lo < floor:
-            ax.text(0.02, 0.03, f"seasonal naive off scale: min {lo:.0f}%",
-                    transform=ax.transAxes, fontsize=6.5, color="#8a6d3b")
-    axes[0].set_ylabel("cost saving vs best simple point rule (%)")
-    axes[0].legend(fontsize=6.5, loc="upper left")
-    fig.suptitle("Decision value of probabilistic ordering (shaded: 95% bootstrap CI over SKUs; "
-                 "y-axis clipped at -65%)", fontsize=9.5)
+    specs = [("savings_vs_best_simple_point_pct", True,
+              "vs best simple point rule (SES)"),
+             ("savings_vs_best_point_all_pct", False,
+              "vs strongest point model (LightGBM-Tweedie point)")]
+    for r, (col, show_ci, ylabel) in enumerate(specs):
+        for c, L in enumerate(C.LEAD_TIMES):
+            ax = axes[r, c]
+            for model in MODELS:
+                s = q[(q["lead_time"] == L) & (q["model"] == model)].sort_values("cost_ratio")
+                ax.plot(s["cost_ratio"], s[col],
+                        marker="o", ms=3, color=COLORS[model], label=NICE[model], lw=1.2)
+                if show_ci:
+                    ax.fill_between(s["cost_ratio"], s["ci_low_pct"], s["ci_high_pct"],
+                                    color=COLORS[model], alpha=0.08)
+            sn = q[(q["lead_time"] == L) & (q["model"] == "seasonal_naive")]
+            lo = float(sn[col].min())
+            ax.axhline(0, color="k", lw=0.8, ls="--")
+            ax.set_xscale("log")
+            ax.set_xticks(list(C.COST_RATIOS))
+            ax.set_xticklabels([str(x) for x in C.COST_RATIOS])
+            ax.set_ylim(floor, 55)
+            ax.set_xlabel("Cu / Co (underage / holding cost)")
+            if r == 0:
+                ax.set_title(f"lead time = {L} weeks")
+            if lo < floor:
+                ax.text(0.02, 0.03, f"seasonal naive off scale: {lo:.0f}%",
+                        transform=ax.transAxes, fontsize=6.2, color="#8a6d3b")
+        axes[r, 0].set_ylabel("cost saving (%)")
+        axes[r, 0].text(0.02, 0.96, ylabel, transform=axes[r, 0].transAxes,
+                        fontsize=7, va="top", color="#333333")
+    axes[0, 0].legend(fontsize=6.2, loc="upper left", bbox_to_anchor=(0.0, 0.90))
+    fig.suptitle("Decision value of probabilistic ordering. Top: shaded 95% bootstrap CI over SKUs "
+                 "(defined vs SES point).\nBottom: point estimates vs the strongest point model; "
+                 "no CI is claimed. y-axis clipped at -65%.", fontsize=8.6)
     fig.tight_layout()
     fig.savefig(C.OUT_FIGURES / "fig4_cost_vs_ratio.png", bbox_inches="tight")
     plt.close(fig)
@@ -234,8 +253,9 @@ def fig5_error_by_class(by_class):
 
 
 def fig6_service_vs_inventory(dec):
-    fig, ax = plt.subplots(figsize=(5.6, 4.4))
+    fig, ax = plt.subplots(figsize=(6.4, 4.6))
     d = dec[(dec["lead_time"] == 4) & (dec["cost_ratio"] == 9)]
+    labels = []
     for model in MODELS:
         s = d[d["model"] == model]
         for _, row in s.iterrows():
@@ -249,13 +269,38 @@ def fig6_service_vs_inventory(dec):
                 ax.annotate("", xy=(b["avg_inventory_units"].iat[0], b["fill_rate"].iat[0] * 100),
                             xytext=(a["avg_inventory_units"].iat[0], a["fill_rate"].iat[0] * 100),
                             arrowprops=dict(arrowstyle="->", color=COLORS[model], lw=1))
-            ax.annotate(NICE[model], (b["avg_inventory_units"].iat[0], b["fill_rate"].iat[0] * 100),
-                        fontsize=6.5, xytext=(3, 3), textcoords="offset points")
+            if len(b):
+                labels.append((b["avg_inventory_units"].iat[0], b["fill_rate"].iat[0] * 100,
+                               NICE[model], COLORS[model]))
     ax.set_xlabel("average inventory (units, L=4)")
     ax.set_ylabel("fill rate (%)")
     ax.set_title("Service–inventory frontier, Cu/Co=9, L=4\n"
                  "square = point rule, circle = quantile rule")
     fig.tight_layout()
+
+    # Place labels greedily: try a ring of offsets and keep the first that does
+    # not overlap a label already placed.  Deterministic, so the figure is stable.
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    placed = []
+    candidates = [(5, 4), (5, -11), (-6, 5), (8, 9), (-10, -10), (9, -6),
+                  (0, 11), (0, -13), (-14, 0), (14, 3)]
+    for i, (x, y, text, color) in enumerate(labels):
+        chosen = None
+        for dx, dy in candidates:
+            t = ax.annotate(text, (x, y), fontsize=6.5, color=color,
+                            xytext=(dx, dy), textcoords="offset points")
+            box = t.get_window_extent(renderer=renderer)
+            if not any(box.overlaps(o) for o in placed):
+                chosen = (t, box)
+                break
+            t.remove()
+        if chosen is None:
+            t = ax.annotate(text, (x, y), fontsize=6.5, color=color,
+                            xytext=candidates[i % len(candidates)],
+                            textcoords="offset points")
+            chosen = (t, t.get_window_extent(renderer=renderer))
+        placed.append(chosen[1])
     fig.savefig(C.OUT_FIGURES / "fig6_service_vs_inventory.png", bbox_inches="tight")
     plt.close(fig)
 
