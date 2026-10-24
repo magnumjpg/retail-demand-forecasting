@@ -1,4 +1,4 @@
 $ C:\Users\jaime\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe -m pytest -q tests/test_pipeline.py
 
 .............                                                            [100%]
-13 passed in 2.92s
+13 passed in 2.11s

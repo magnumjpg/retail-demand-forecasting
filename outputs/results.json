@@ -3,9 +3,9 @@
   "meta": {
     "project": "03_online_retail_forecasting",
     "title": "Forecasting sparse demand: probabilistic SKU forecasts and the cost of getting inventory wrong",
-    "generated_utc": "2026-10-24T23:05:01+00:00",
+    "generated_utc": "2026-10-24T23:16:18+00:00",
     "command": "python src/run_all.py",
-    "git_commit": "b11b738980c0aa32b402c80fc05aff1ca8dc789f",
+    "git_commit": "3349a7e7fcc044cf84d7314ebf397eaaa41f6948",
     "seed": 20261024,
     "versions": {
       "python": "3.11.9",
@@ -22,12 +22,12 @@
     },
     "stage_seconds": {
       "download": 0.3,
-      "clean": 7.6,
-      "backtest": 84.7,
-      "decision": 4.2,
-      "figures": 12.3
+      "clean": 7.7,
+      "backtest": 90.2,
+      "decision": 4.1,
+      "figures": 12.0
     },
-    "total_seconds": 109.0
+    "total_seconds": 114.2
   },
   "data": {
     "raw_rows_two_sheets": 1067371,
@@ -193,7 +193,7 @@
         "fit_end_week": "2011-02-28",
         "n_train_rows": 535248,
         "n_calib_rows": 216648,
-        "seconds": 22.7
+        "seconds": 25.9
       },
       {
         "origin": 85,
@@ -202,7 +202,7 @@
         "fit_end_week": "2011-04-25",
         "n_train_rows": 637200,
         "n_calib_rows": 216648,
-        "seconds": 22.4
+        "seconds": 25.1
       },
       {
         "origin": 93,
@@ -211,7 +211,7 @@
         "fit_end_week": "2011-06-20",
         "n_train_rows": 739152,
         "n_calib_rows": 216648,
-        "seconds": 26.8
+        "seconds": 27.1
       }
     ],
     "origins_weeks": [
@@ -227,7 +227,7 @@
     ],
     "n_obs_per_horizon": 9558,
     "n_skus": 3186,
-    "seconds": 84.0,
+    "seconds": 89.4,
     "bulk_sensitivity": {
       "excluded_obs_share_h1": 0.0134,
       "excluded_demand_share_h1": 0.1486,
@@ -331,7 +331,7 @@
         }
       }
     },
-    "as_of": "2026-10-25T01:04:44"
+    "as_of": "2026-10-25T01:16:01"
   },
   "origins": [
     {
@@ -341,7 +341,7 @@
       "fit_end_week": "2011-02-28",
       "n_train_rows": 535248,
       "n_calib_rows": 216648,
-      "seconds": 22.7
+      "seconds": 25.9
     },
     {
       "origin": 85,
@@ -350,7 +350,7 @@
       "fit_end_week": "2011-04-25",
       "n_train_rows": 637200,
       "n_calib_rows": 216648,
-      "seconds": 22.4
+      "seconds": 25.1
     },
     {
       "origin": 93,
@@ -359,7 +359,7 @@
       "fit_end_week": "2011-06-20",
       "n_train_rows": 739152,
       "n_calib_rows": 216648,
-      "seconds": 26.8
+      "seconds": 27.1
     }
   ],
   "accuracy": [
@@ -9773,11 +9773,11 @@
     "outputs/figures/fig1_intermittency.png": 67575,
     "outputs/figures/fig2_forecast_vs_actual.png": 178153,
     "outputs/figures/fig3_calibration.png": 79936,
-    "outputs/figures/fig4_cost_vs_ratio.png": 177786,
+    "outputs/figures/fig4_cost_vs_ratio.png": 276510,
     "outputs/figures/fig5_error_by_class.png": 30086,
-    "outputs/figures/fig6_service_vs_inventory.png": 53824,
+    "outputs/figures/fig6_service_vs_inventory.png": 61555,
     "outputs/figures/fig7_worst_skus.png": 272600,
-    "outputs/results.json": 274048
+    "outputs/results.json": 274083
   },
   "quality": {
     "origins_count": 3,
@@ -9801,7 +9801,7 @@
       "command": "python -m pytest -q tests/test_pipeline.py",
       "n_passed": 13,
       "n_failed": 0,
-      "seconds": 5.0,
+      "seconds": 4.0,
       "log": "outputs/test_report.txt"
     }
   }
