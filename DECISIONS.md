@@ -358,7 +358,7 @@ ratio 9) is a reporting convention, not an estimate of the retailer's true costs
 
 ---
 
-## D16 — Savings versus the best simple point rule; oracle as a bound
+## D16 - Savings versus the best simple point rule and the cheapest point rule in each cell
 
 **Context.** "Savings versus what?" determines the whole headline.
 
@@ -639,7 +639,7 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
 | D13 | 13-week realised-only window | 26 weeks / expanding | Locality, no leakage |
 | D14 | Separate cumulative-L grid | Sum marginal quantiles | Dependence |
 | D15 | 1%/week holding, ratios 1–19 | Single cost ratio | Honest sweep |
-| D16 | Save vs best simple point rule | Fixed weak baseline | Conservative comparator |
+| D16 | Save vs best simple point rule; also vs cheapest point rule in each cell | Fixed weak baseline | Conservative comparators, both reported |
 | D17 | 500-rep SKU bootstrap | Origin bootstrap | Only 3 origins |
 | D18 | Bulk trim accuracy only | Trim decisions too | Not like-for-like |
 | D19 | Cold split <26 vs ≥26 | No split | Charter |
