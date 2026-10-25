@@ -1,5 +1,9 @@
 # Forecasting sparse demand
 
+[![CI](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml) [![tests](https://img.shields.io/badge/tests-24%20passed-brightgreen)](#) [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Data](https://img.shields.io/badge/data-UCI%20Online%20Retail%20II-informational)](DATA.md)
+
+[Resumen en español](#resumen-en-español) · [Método](METHOD.md) · [Limitaciones](LIMITATIONS.md) · [Decisiones](DECISIONS.md)
+
 **Probabilistic SKU-week forecasts and the cost of getting inventory wrong**  
 UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins
 
