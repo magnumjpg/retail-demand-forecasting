@@ -2,28 +2,26 @@
 
 [![CI](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml) [![tests](https://img.shields.io/badge/tests-24%20passed-brightgreen)](#) [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Data](https://img.shields.io/badge/data-UCI%20Online%20Retail%20II-informational)](DATA.md)
 
-[Resumen en español](#resumen-en-español) · [Método](METHOD.md) · [Limitaciones](LIMITATIONS.md) · [Decisiones](DECISIONS.md)
+[Resumen en español](#resumen-en-español) · [Method](METHOD.md) · [Limitations](LIMITATIONS.md) · [Decisions](DECISIONS.md)
 
-**Probabilistic SKU-week forecasts and the cost of getting inventory wrong**  
-UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins
+**Calibrated quantile forecasts cut total inventory cost by 23.82% in the central case — and lose to a point rule when holding costs as much as a stockout.**
 
-**At a glance.** *Question:* do calibrated probabilistic SKU forecasts reduce inventory cost
-relative to point forecasts? *Data:* 972,068 cleaned UCI Online Retail II line items, aggregated
-to 3,995 SKUs × 104 ISO weeks. *Sample:* 3,186 SKUs with ≥12 positive pre-origin weeks, three
-rolling origins, 26-week test window. *Method:* seven point models plus a shared Mondrian
-conformal layer, evaluated in a 3 lead-time × 4 cost-ratio newsvendor grid. *Headline:* at the
-central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95%
-bootstrap CI **21.20–26.18%**, conditional on that cell). *Caveat:* the reported model is
-selected ex post inside the central cell (a reporting convention, not the best cell); the best
-quantile model per cell ranges from **2.43%** to **48.81%**, and at `Cu/Co=1` the SES quantile
-rule loses to the cheapest point rule.
+*UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins · 24 tests*
+
+---
+
+## At a glance
+
+- **Question:** do calibrated probabilistic SKU forecasts reduce inventory cost relative to point forecasts?
+- **Data:** 972,068 cleaned UCI Online Retail II line items, aggregated to 3,995 SKUs × 104 ISO weeks; the model sample is 3,186 SKUs with at least 12 positive pre-origin weeks, three rolling origins and a 26-week test window.
+- **Method:** seven point models plus a shared Mondrian conformal layer, evaluated in a 3 lead-time × 4 cost-ratio newsvendor grid.
+- **Headline:** at the central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95% bootstrap CI **21.20–26.18%**, conditional on that cell).
+- **Caveat:** the reported model is selected ex post inside the central cell (a reporting convention, not the best cell); the best quantile model per cell ranges from **2.43%** to **48.81%**, and at `Cu/Co=1` the SES quantile rule loses to the cheapest point rule.
 
 This is a decision memo, not a leaderboard entry. It asks whether calibrated probabilistic
 forecasts reduce inventory cost under a newsvendor policy, and where the approach breaks.
 Every number below is a field of [`outputs/results.json`](outputs/results.json); the file is
 assembled by `src/run_all.py` from the pipeline artefacts, never typed into the docs by hand.
-
----
 
 ## 1. The answer in one page
 
@@ -75,8 +73,6 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
    with a bulk-order week account for most of the worst-cost list: the top 20 SKUs are **16.15%**
    of total newsvendor cost.
 
----
-
 ## 2. Data at a glance
 
 | Item | Value | Source in `results.json` |
@@ -100,8 +96,6 @@ to `origin − 13 weeks`; the 13-week conformal window uses only targets realise
 For a cumulative `L`-week grid, a calibration origin enters only when its whole window is
 realised (`t + L ≤ origin`), so 12 calibration origins are usable at h=1 and 11 / 9 / 5 at
 `L = 2 / 4 / 8`; partial windows are never mixed into a cumulative residual grid.
-
----
 
 ## 3. Point accuracy at h = 1
 
@@ -157,8 +151,6 @@ have. Cold-start SKUs (12–25 positive weeks at the first origin, **880** SKUs)
 separately: LightGBM median **0.558** vs SES **0.818** vs Croston **3.689**; SES is essentially
 unchanged from the warm group (**0.819**).
 
----
-
 ## 4. Calibration
 
 Intervals are produced by one shared layer: standardise residuals as
@@ -180,7 +172,9 @@ longer horizons it becomes over-covered (h=2: 0.792–0.874; h=4: 0.798–0.914)
 conformal grid widens with horizon while the zero atom does not move. Figure
 `fig3_calibration.png` plots central-interval coverage curves.
 
----
+![Figure 3 — Interval calibration](outputs/figures/fig3_calibration.png)
+
+*Figure 3. Empirical coverage of central prediction intervals at h = 1, all origins. The diagonal is perfect calibration; most models sit above it, so the intervals are conservative rather than overconfident. Source: `outputs/figures/fig3_calibration.png`.*
 
 ## 5. Decision value
 
@@ -247,7 +241,9 @@ L=2 **39.31%** [36.35, 42.56] / **33.99%**, L=4 **43.12%** [39.89, 45.97] / **38
 **48.81%** [46.36, 51.18] / **46.96%**. Higher lead times need more cover, so a distribution matters
 more; they also carry more inventory and a larger absolute cost.
 
----
+![Figure 4 — Decision value versus cost ratio](outputs/figures/fig4_cost_vs_ratio.png)
+
+*Figure 4. Cost saving of each quantile policy against the cost ratio Cu/Co, for lead times of 2, 4 and 8 weeks. The top row compares with the best simple point rule (SES); the bottom row compares with the cheapest point rule in each cell. Shaded bands are 95% bootstrap intervals over SKUs. Source: `outputs/figures/fig4_cost_vs_ratio.png`.*
 
 ## 6. Where it fails
 
@@ -277,7 +273,9 @@ sample (3,482 SKUs pass ≥8, 3,186 pass ≥12 at the first origin). Among those
 the median's under-forecasting is most dangerous for ordering; the backtest does not measure
 the cost of cold-start SKUs separately, which is a limitation.
 
----
+![Figure 7 — The twenty costliest SKUs](outputs/figures/fig7_worst_skus.png)
+
+*Figure 7. Weekly demand histories of the 20 SKUs with the largest newsvendor cost at the central case (L = 4, Cu/Co = 9, LightGBM quantile policy). Source: `outputs/figures/fig7_worst_skus.png`.*
 
 ## 7. What this does not prove
 
@@ -317,9 +315,7 @@ the cost of cold-start SKUs separately, which is a limitation.
 - **The "oracle" is clairvoyant.** It orders realised demand and has zero cost by construction;
   it is a bound, not an achievable policy.
 
----
-
-## Literature and positioning
+## 8. Literature and positioning
 
 The project sits between intermittent-demand forecasting and inventory theory. These are the
 works that inform the design; it does not claim to extend them.
@@ -350,9 +346,7 @@ works that inform the design; it does not claim to extend them.
   (4th ed., CRC Press).** The single-period newsvendor logic and the critical-ratio rule used in
   the decision layer.
 
----
-
-## 8. Reproduce
+## 9. Reproduce
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -384,9 +378,7 @@ L-week windows; cost vector priced from pre-origin data; compact 0…n−1 boots
 accounting identities; `results.json` contract; 7 figures; the realised SKU set is compared
 across models in all 24 origin × horizon cells (3,186 SKUs per cell); **24 tests**.
 
----
-
-## 9. Repository layout
+## 10. Repository layout
 
 ```
 03_online_retail_forecasting/
@@ -429,9 +421,7 @@ Figures: intermittency and concentration (`fig1`); rolling forecast paths for a 
 slow SKU (`fig2`); calibration (`fig3`); decision value vs cost ratio (`fig4`); MASE by demand
 class (`fig5`); service–inventory frontier (`fig6`); worst 20 SKUs (`fig7`).
 
----
-
-## 10. Assumptions register
+## 11. Assumptions register
 
 | Assumption | Value | Where |
 |---|---|---|
@@ -478,4 +468,3 @@ media por construcción. SES, el modelo más simple, gana la comparación de dec
 del precio por semana en almacén, ratios 1/3/9/19) y los plazos (2/4/8 semanas) son supuestos
 barridos, no datos de la empresa; no hay información de roturas de stock, por lo que la demanda
 está censurada. Es un prototipo analítico reproducible, no una política desplegada.
-
