@@ -570,10 +570,12 @@ results file (violates the traceability gate).
 **Consequence.** The docs quote fields of `results.json`, not numbers typed from a console. A
 failed test makes the build exit non-zero. `--from-cache` is for iteration; the release run uses
 the default so the audit is rebuilt from the verified workbook. `meta.git_commit` is `HEAD` at
-run time and `meta.git_dirty` says whether the working tree had uncommitted changes. When it did,
-`meta.git_state` reads `working tree on top of <hash>`: the artefacts were produced by code that
-is not fully contained in `git_commit`, and the field says so instead of implying otherwise. A
-release run should be made from a clean tree, where `git_state` reads `clean tree at <hash>`.
+run time and `meta.git_dirty` says whether the **code tree** had uncommitted changes; generated
+artefacts under `outputs/` and `data/` are excluded because the pipeline rewrites them on every
+run. When the code tree is dirty, `meta.git_state` reads `working tree on top of <hash>`: the
+artefacts were produced by code that is not fully contained in `git_commit`, and the field says so
+instead of implying otherwise. A release run is made from a clean tree, where `git_state` reads
+`clean tree at <hash>`.
 
 ---
 

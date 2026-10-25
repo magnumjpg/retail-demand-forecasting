@@ -279,7 +279,8 @@ A fourth review checked the regenerated artefacts. Three follow-ups:
    `p_value_at_resolution`, `p_value_upper_bound` (1/10,001) and the count of replicates ≤ 0.
 2. **Provenance.** `meta.git_commit` named `HEAD` while the artefacts came from a dirty tree.
    `meta.git_dirty` now records that, and `meta.git_state` reads "working tree on top of
-   <hash>"; a clean release run reads "clean tree at <hash>".
+   <hash>"; a clean release run reads "clean tree at <hash>". The flag ignores generated
+   artefacts under `outputs/` and `data/`, since the run rewrites them by design.
 3. **CI coverage.** Push/PR still runs the cache-free suite. A manual `full-pipeline.yml`
    (`workflow_dispatch`) installs requirements, restores or downloads the UCI archive, runs
    `python src/run_all.py --skip-tests`, then the full suite.

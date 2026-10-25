@@ -73,13 +73,20 @@ def versions() -> dict:
 
 
 def git_provenance() -> tuple[str | None, bool | None]:
-    """Return (HEAD hash, working-tree dirty flag); (None, None) outside git."""
+    """Return (HEAD hash, code-tree dirty flag); (None, None) outside git.
+
+    Generated artefacts under ``outputs/`` and ``data/`` are excluded: the
+    pipeline rewrites them on every run, so counting them would mark every
+    run dirty. The flag describes the code, tests and config that produced
+    the result.
+    """
     try:
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
                               capture_output=True, text=True).stdout.strip() or None
-        status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                                check=True, capture_output=True,
-                                text=True).stdout
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=normal", "--",
+             ".", ":(exclude)outputs", ":(exclude)data"],
+            cwd=ROOT, check=True, capture_output=True, text=True).stdout
         return head, bool(status.strip())
     except Exception:
         return None, None
