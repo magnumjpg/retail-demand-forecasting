@@ -31,16 +31,19 @@ model (e.g. a Tobit/latent-demand likelihood). Neither is in Online Retail II.
 
 `Co = 1% × unit price × L` per unit held over the cover, `Cu = (Cu/Co) × Co` with ratios
 `{1, 3, 9, 19}`, and lead times `{2, 4, 8}` weeks are **invented for the sweep**. Unit price is the
-SKU's median observed price, winsorised at p99.5, used as a proxy for value — not the purchase cost,
-margin, or salvage value.
+SKU's median observed price **over weeks up to each forecast origin**, winsorised at p99.5, used as
+a proxy for value — not the purchase cost, margin, or salvage value. Using pre-origin prices keeps
+the cost vector free of evaluation-window information; costing the same orders with the full-sample
+median changes the central saving only from 23.82% to 23.77% (vs SES) and 18.62% to 18.41% (vs the
+cheapest point rule), so that choice is not driving the result.
 
-**Consequence.** Absolute costs (`157,603.99` at the central SES-quantile cell, for example) are
+**Consequence.** Absolute costs (`159,353.89` at the central SES-quantile cell, for example) are
 not a P&L statement and should not be quoted as money. Only the *ordering* of policies at the same
 `L` and ratio is meaningful. For the SES quantile policy, a symmetric cost ratio (`Cu/Co = 1`,
-critical ratio 0.5) produces savings of at most **4.22%** (and **1.65%** at L=8). The grid's
-largest ratio-1 saving is **14.21%** (LightGBM median, L=4), but that model is only **1.6%** at
-ratio 3, so the symmetric-cost result is model-specific, not a general gain. Real margin, markdown,
-salvage, fixed ordering cost, MOQ and capacity are absent.
+critical ratio 0.5) produces savings of at most **4.23%** (and **1.67%** at L=8). The grid's
+largest ratio-1 saving is **13.38%** (LightGBM-median quantile, L=4), but that model's quantile rule
+is only **+0.54%** at ratio 3, so the symmetric-cost result is model-specific, not a general gain.
+Real margin, markdown, salvage, fixed ordering cost, MOQ and capacity are absent.
 
 **What would fix it.** Finance-owned unit costs and margins, observed lead-time distributions, and
 a cost model with fixed order cost and salvage. The sweep in `decision.csv` is the honest
@@ -71,7 +74,7 @@ units. In evaluation, weeks above each SKU's training p99.5 are **1.34%** of h=1
 accuracy-side sensitivity removes them and every model improves (SES 0.819 → 0.624; LightGBM
 median 0.686 → 0.474), with the ranking unchanged. But the **decision side was not re-estimated**:
 trimming a cumulative L-week decision removes whole SKU-decisions and changes the cost base, so a
-like-for-like saving is not available from this run. The 20 worst SKUs are **16.85%** of focal
+like-for-like saving is not available from this run. The 20 worst SKUs are **16.15%** of focal
 newsvendor cost; that concentration is a finding about the data, not a stable SKU list.
 
 **What would fix it.** A decision-side rerun on a trimmed demand set, and a bulk-order indicator or
@@ -182,11 +185,17 @@ grid is per horizon (and separately per cumulative L for decisions), not a full 
 distribution over all horizons.
 
 **Consequence.** Coverage is conditional on the demand class, not on the individual SKU, price,
-season or inventory state. Exchangeability is assumed within the 13-week window; a structural
+season or inventory state. Exchangeability is assumed within the 13 candidate weeks; a structural
 break inside that window invalidates the guarantee. The window is short, so the empirical
-quantiles are noisy, especially in the tail (q=0.95) and for small classes. Coverage at longer
-horizons is slightly conservative (h=2: 0.788–0.870; h=4: 0.806–0.908), consistent with a marginal
-grid widening while the zero atom stays fixed.
+quantiles are noisy, especially in the tail (q=0.95) and for small classes. Coverage is at or just
+below target at h=1 (0.778–0.806) and over-covered at longer horizons (h=2: 0.792–0.874;
+h=4: 0.798–0.914), consistent with a marginal grid widening while the zero atom stays fixed.
+
+A second, mechanical source of noise is that the usable history shrinks with L. Only calibration
+origins whose whole L-week window is realised before the forecast origin enter the cumulative grid:
+12 origins at h=1, then 11 / 9 / 5 at L = 2 / 4 / 8. The L=8 tail quantiles therefore rest on five
+overlapping windows, which is a reason to treat the L=8 saving as the least stable in the grid
+(see §2.6).
 
 **What would fix it.** Adaptive conformal inference (ACI) or a rolling recalibration with a longer
 window; SKU-level partial pooling; a copula or bootstrap over the joint path for multi-horizon
@@ -198,7 +207,7 @@ The charter asks for 1, 2 and 4 weeks. The decision analysis adds L=8, whose cum
 rely on h=5–8 forecasts that are **not** in the accuracy tables. The cumulative conformal grid is
 built for L=2, 4, 8 and is not the sum of marginal quantiles.
 
-**Consequence.** The L=8 decision result (the largest saving, **47.80%**) rests on forecast
+**Consequence.** The L=8 decision result (the largest saving, **48.81%**) rests on forecast
 horizons with less accuracy evidence than the central case. It is a legitimate grid point, but it
 should not be read as equally well validated as L=4.
 
@@ -248,11 +257,14 @@ conservative for the probabilistic policy (the baseline is as strong as it can b
 uses evaluation information to select the baseline. The baseline is not a pre-registered incumbent
 policy.
 
-**Consequence.** "23.88% versus the best simple point rule (SES)" is not "23.88% versus the company's current
-policy". A real incumbent could be better or worse. A stronger post-hoc comparator is recorded as
-well: the best point model across all seven models at the central case is LightGBM Tweedie point,
-and the SES quantile saves **18.53%** against it. The oracle (order realised demand, zero cost) is a
-bound, not an achievable policy, and is labelled as such.
+**Consequence.** "23.82% versus the best simple point rule (SES)" is not "23.82% versus the
+company's current policy". A real incumbent could be better or worse. A stronger post-hoc
+comparator is recorded as well: the **cheapest point rule in each cell**. At the central case that
+is LightGBM Tweedie point, and the SES quantile saves **18.62%** against it. The identity of that
+rule is itself selected on the evaluation table — LightGBM median at `Cu/Co = 1`, LightGBM Tweedie
+above it — so "cheapest point rule in this cell" is a same-vintage, post-hoc comparator, not a
+pre-registered model. The oracle (order realised demand, zero cost) is a bound, not an achievable
+policy, and is labelled as such.
 
 **What would fix it.** Pre-register one incumbent (e.g. SES point) or evaluate against the actual
 replenishment policy, which the dataset does not contain.
@@ -277,7 +289,7 @@ is not the best policy (SES quantile is), and the median model is deliberately b
 therefore illustrates failure modes of a plausible but suboptimal policy; it is not a list of SKUs
 that the recommended policy handles badly.
 
-**Consequence.** The 16.85% cost concentration and the individual SKU costs are descriptive of that
+**Consequence.** The 16.15% cost concentration and the individual SKU costs are descriptive of that
 cell. They should not be generalised to the SES policy without recomputation.
 
 **What would fix it.** Produce the worst-SKU table for the recommended policy as well, and compare.
@@ -320,11 +332,13 @@ and out-of-sample service monitoring.
 - **Runtime.** A full clean + backtest + decision + figures run takes roughly two minutes on the
   development machine. That is short enough for a portfolio, but it is not a production
   retraining pipeline.
-- **Tests are invariants, not a numerical golden master.** The 13 tests check the calendar spine,
+- **Tests are invariants, not a numerical golden master.** The 19 tests check the calendar spine,
   the audit identity, leakage by perturbing every post-origin week, monotone quantiles, accounting
-  identities, the `results.json` contract and the presence of docs/figures. They do **not** assert
-  every headline number, so a model change can move the metrics without failing the suite. The
-  README numbers are checked against `results.json` by hand at release.
+  identities, the `results.json` contract, complete cumulative conformal windows, the compact
+  bootstrap index, a pre-origin price vector, the release headline numbers and the presence of
+  docs/figures. They do **not** assert every metric, so a genuine model change can move the
+  accuracy table without failing the suite. The README numbers are checked against `results.json`
+  by hand at release.
 - **Figures use test-window information for display.** `fig2` selects representative fast/medium/
   slow SKUs by median test-window demand, and `fig7` selects the worst SKUs by realised cost. These
   are descriptive plots, not ex-ante selection rules; no reported metric depends on them.
@@ -338,10 +352,10 @@ and out-of-sample service monitoring.
 The result is conditional, and it is worth stating the conditions under which it would fail:
 
 1. **Costs near symmetric.** For the SES quantile policy at `Cu/Co = 1` (critical ratio 0.5) the
-   saving is at most **4.22%** and falls to **1.65%** at L=8, so the recommended policy's case is
-   weak near symmetric costs. The grid's largest ratio-1 saving is **14.21%** (LightGBM median,
-   L=4), but that model is only **1.6%** at ratio 3; the symmetric-cost gain is not stable. If the
-   true ratio is near 1, the evidence for a robust probabilistic gain is weak.
+   saving is at most **4.23%** and falls to **1.67%** at L=8, so the recommended policy's case is
+   weak near symmetric costs. The grid's largest ratio-1 saving is **13.38%** (LightGBM-median
+   quantile, L=4), but that model is only **+0.54%** at ratio 3; the symmetric-cost gain is not
+   stable. If the true ratio is near 1, the evidence for a robust probabilistic gain is weak.
 2. **True lost sales.** If stockouts are common and demand is heavily censored, observed zeros
    understate demand and the evaluated stockout cost understates the true cost. The ranking of
    policies could change once latent demand is modelled.
@@ -350,8 +364,8 @@ The result is conditional, and it is worth stating the conditions under which it
 4. **Aggregate-volume planning.** LightGBM median has the best MASE but a pooled WAPE of **40.05%**;
    a business that plans total volume would reject it. With hierarchical reconciliation, the
    decision ranking could change.
-5. **Longer horizons.** The largest saving (L=8, **47.80%**) relies on h=5–8, which are not in the
-   accuracy tables. Restricting to L≤4 leaves the central **23.88%** result intact but removes the
+5. **Longer horizons.** The largest saving (L=8, **48.81%**) relies on h=5–8, which are not in the
+   accuracy tables. Restricting to L≤4 leaves the central **23.82%** result intact but removes the
    headline maximum.
 6. **A different year or retailer.** Three origins in one 26-week window are not evidence of
    generalisation. A replication on a second dataset is the only real test.
@@ -370,7 +384,7 @@ The result is conditional, and it is worth stating the conditions under which it
 | ≥12 positive weeks required | Result excludes the newest/rarest SKUs | Cold-start model for 8–11-week SKUs |
 | Fixed hyperparameters | Comparison is of configurations, not model classes at their best | Nested rolling-origin tuning |
 | 13-week marginal conformal | Coverage is class-conditional, not SKU-conditional; noisy tails | ACI / longer window / partial pooling |
-| L=8 not in accuracy tables | The 47.80% headline has weaker accuracy support than L=4 | Report h=8 accuracy |
+| L=8 not in accuracy tables | The 48.81% headline has weaker accuracy support than L=4 | Report h=8 accuracy |
 | One order per L, no carry-over | Single-period approximation of a multi-period problem | Inventory simulation |
 | Baseline chosen on evaluation cells | Not a comparison with the real incumbent policy | Pre-register one incumbent |
 | Bootstrap over SKUs only | CIs narrower than full uncertainty | Block bootstrap over time |

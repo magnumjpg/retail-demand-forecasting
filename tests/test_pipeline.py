@@ -5,11 +5,11 @@ Run either way:
     python -m pytest -q tests/test_pipeline.py
     python tests/test_pipeline.py
 
-The tests are deliberately about *invariants* (no negative demand, complete
-calendar spine, no future information, monotone quantiles, accounting
-identities), not about re-asserting the headline numbers.  Point-in-time
-metrics are allowed to change when a model is changed; a leaked feature or a
-broken spine is never allowed.
+The tests are about *invariants* (no negative demand, complete calendar spine, no
+future information, monotone quantiles, accounting identities) plus a small
+release-contract check that pins the headline numbers quoted in the docs. Point-in-
+time metrics can change when a model is changed; a leaked feature, a partial
+conformal window or a broken spine is never allowed.
 """
 from __future__ import annotations
 
@@ -20,10 +20,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import config as C  # noqa: E402
+from decision import bootstrap_savings, price_vector  # noqa: E402
 from features import FEATURES, load_panel  # noqa: E402
 
 _PANEL = None
@@ -177,6 +179,111 @@ def test_decision_sweep_covers_the_charter_grid():
     q = dec[dec["policy"] == "quantile"]
     assert (q["avg_inventory_units"] >= 0).all()
     assert q["weeks_of_cover"].notna().all()
+
+
+def test_aggregate_conformal_grids_use_complete_windows():
+    """An aggregate L-grid must have exactly the same n as the marginal h=L grid.
+
+    If a late calibration origin were summed over fewer than L weeks, the aggregate
+    n would be larger; that was the pre-audit bug.
+    """
+    g = pd.read_csv(C.RESIDUALS)
+    keys = ["horizon", "origin", "model", "demand_class"]
+    agg = g[g["kind"] == "aggregate"][keys + ["n"]].drop_duplicates()
+    hor = g[g["kind"] == "horizon"][keys + ["n"]].drop_duplicates()
+    merged = agg.merge(hor, on=keys, suffixes=("_agg", "_horizon"))
+    assert len(merged) == len(agg)
+    assert (merged["n_agg"] == merged["n_horizon"]).all(), \
+        merged[merged["n_agg"] != merged["n_horizon"]]
+    # all three decision horizons must be present, and none may be empty
+    assert set(agg["horizon"]) == set(C.LEAD_TIMES)
+    assert (agg["n"] > 0).all()
+
+
+def test_bootstrap_requires_a_compact_sku_index():
+    """The bootstrap must be handed 0..n-1 codes, not the global sku_idx."""
+    rng = np.random.default_rng(0)
+    n = 40
+    codes = np.repeat(np.arange(n), 3)
+    cost_model = rng.uniform(1, 2, size=len(codes))
+    cost_base = rng.uniform(2, 3, size=len(codes))
+    idx = rng.integers(0, n, size=(200, n))
+    lo, hi = bootstrap_savings(cost_model, cost_base, codes, idx)
+    assert lo < hi
+    assert lo > 0  # model is cheaper than base by construction
+    # global indices with gaps are not the same code space and must fail loudly
+    global_codes = np.repeat(np.arange(100, 100 + n), 3)
+    with pytest.raises(AssertionError):
+        bootstrap_savings(cost_model, cost_base, global_codes, idx)
+
+
+def test_price_vector_ignores_post_origin_weeks():
+    """The cost price must be computed only from weeks up to the origin."""
+    p = _panel()
+    o = p.origin0
+    base = price_vector(p, o)
+    # every evaluated SKU has an observed pre-origin price; the full-sample
+    # fallback inside price_vector cannot bind on the model sample
+    mask = np.isin(p.skus, p.model_skus)
+    assert (p.D[mask, : o + 1] > 0).any(axis=1).all()
+    rng = np.random.default_rng(1)
+    n, w = p.D.shape
+    D2 = p.D.copy()
+    R2 = p.R.copy()
+    D2[:, o + 1:] = rng.uniform(1e5, 2e5, size=(n, w - o - 1))
+    R2[:, o + 1:] = rng.uniform(1e7, 2e7, size=(n, w - o - 1))
+    p2 = dataclasses.replace(p, D=D2, R=R2)
+    assert np.allclose(base, price_vector(p2, o))
+    # spot-check one SKU against a manual median of weeks <= origin
+    j = int(np.flatnonzero(p.D[:, : o + 1].sum(axis=1) > 0)[0])
+    with np.errstate(invalid="ignore", divide="ignore"):
+        px = np.where(p.D[j, : o + 1] > 0,
+                      p.R[j, : o + 1] / np.maximum(p.D[j, : o + 1], 1e-9), np.nan)
+    manual = float(np.nanmedian(px))
+    pos = base[base > 0]
+    expected = float(np.clip(manual, 0.01, np.quantile(pos, 0.995)))
+    assert abs(base[j] - expected) < 1e-9
+
+
+def test_headline_decision_numbers_match_the_table():
+    res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
+    dec = pd.read_csv(C.OUT_TABLES / "decision.csv")
+    central = res["headline"]["decision"]["central_case_quantile"]
+    row = dec[(dec["lead_time"] == 4) & (dec["cost_ratio"] == 9)
+              & (dec["model"] == "ses") & (dec["policy"] == "quantile")].iloc[0]
+    for key in ("savings_vs_best_simple_point_pct", "ci_low_pct", "ci_high_pct",
+                "savings_vs_best_point_all_pct"):
+        assert abs(row[key] - central[key]) < 1e-6, key
+    assert abs(central["savings_vs_best_simple_point_pct"] - 23.82) < 1e-6
+    assert abs(central["ci_low_pct"] - 21.20) < 1e-6
+    assert abs(central["ci_high_pct"] - 26.18) < 1e-6
+    assert abs(central["savings_vs_best_point_all_pct"] - 18.62) < 1e-6
+    best = dec[(dec["lead_time"] == 8) & (dec["cost_ratio"] == 19)
+               & (dec["model"] == "ses") & (dec["policy"] == "quantile")].iloc[0]
+    assert abs(best["savings_vs_best_simple_point_pct"] - 48.81) < 1e-6
+    assert abs(best["savings_vs_best_point_all_pct"] - 46.96) < 1e-6
+
+
+def test_price_basis_sensitivity_is_stored_and_small():
+    res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
+    s = res["decision"]["assumptions"]["price_basis_sensitivity"]
+    assert s["lead_time"] == 4 and s["cost_ratio"] == 9
+    for key in ("ses_quantile_vs_ses_point_pct",
+                "ses_quantile_vs_tweedie_point_pct"):
+        assert set(s[key]) == {"pre_origin_price", "full_sample_price"}
+        assert abs(s[key]["pre_origin_price"] - s[key]["full_sample_price"]) < 1.0
+    assert s["ses_quantile_vs_ses_point_pct"]["pre_origin_price"] > 20
+    assert s["ses_quantile_vs_tweedie_point_pct"]["pre_origin_price"] > 15
+
+
+def test_coverage_moves_from_under_to_over_with_horizon():
+    acc = pd.read_csv(C.OUT_TABLES / "accuracy.csv")
+    h1 = acc[acc["horizon"] == 1]["coverage80"]
+    h4 = acc[acc["horizon"] == 4]["coverage80"]
+    assert h1.between(0.76, 0.82).all()
+    assert h1.max() <= 0.807
+    assert h4.max() > 0.85
+    assert h4.median() > h1.median()
 
 
 # ---------------------------------------------------------------- results

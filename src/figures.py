@@ -186,9 +186,11 @@ def fig4_cost_vs_ratio(dec):
 
     Top row: saving vs the best *simple* point rule (SES in every cell), with the
     bootstrap CI, because that is what the bootstrap in decision.py estimates.
-    Bottom row: saving vs the strongest point model anywhere in the table
-    (LightGBM-Tweedie point).  Point estimates only: the bootstrap is not defined
-    against that comparator, so drawing a CI band there would be fabricated.
+    Bottom row: saving vs the cheapest *point* rule in each cell. That rule is
+    LightGBM-Tweedie at most cost ratios but LightGBM-median at Cu/Co = 1, so the
+    label must not name one model for the whole row. Point estimates only: the
+    bootstrap is not defined against that comparator, so drawing a CI band there
+    would be fabricated.
     """
     fig, axes = plt.subplots(2, 3, figsize=(11, 6.8), sharex="col")
     q = dec[(dec["policy"] == "quantile")]
@@ -196,7 +198,7 @@ def fig4_cost_vs_ratio(dec):
     specs = [("savings_vs_best_simple_point_pct", True,
               "vs best simple point rule (SES)"),
              ("savings_vs_best_point_all_pct", False,
-              "vs strongest point model (LightGBM-Tweedie point)")]
+              "vs cheapest point rule in each cell")]
     for r, (col, show_ci, ylabel) in enumerate(specs):
         for c, L in enumerate(C.LEAD_TIMES):
             ax = axes[r, c]
@@ -225,8 +227,8 @@ def fig4_cost_vs_ratio(dec):
                         fontsize=7, va="top", color="#333333")
     axes[0, 0].legend(fontsize=6.2, loc="upper left", bbox_to_anchor=(0.0, 0.90))
     fig.suptitle("Decision value of probabilistic ordering. Top: shaded 95% bootstrap CI over SKUs "
-                 "(defined vs SES point).\nBottom: point estimates vs the strongest point model; "
-                 "no CI is claimed. y-axis clipped at -65%.", fontsize=8.6)
+                 "(defined vs SES point).\nBottom: point estimates vs the cheapest point rule in "
+                 "each cell; no CI is claimed. y-axis clipped at -65%.", fontsize=8.6)
     fig.tight_layout()
     fig.savefig(C.OUT_FIGURES / "fig4_cost_vs_ratio.png", bbox_inches="tight")
     plt.close(fig)

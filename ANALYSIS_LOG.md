@@ -4,9 +4,12 @@ Chronological record of what was built, what broke, and what changed as a result
 This is not a success story with the failures removed; it is the order in which the
 evidence arrived.
 
-The project was built by a subagent working to a fixed charter, then audited by the
-lead. The audit changed two things: the bootstrap unit (rows → SKUs) and the
-comparator claims. Both are recorded below rather than silently patched.
+The project was built by a subagent working to a fixed charter, then audited twice:
+once by the lead, then by an independent read-only reviewer. The first audit changed
+the bootstrap unit (rows → SKUs) and the comparator claims. The second found four
+defects — partial cumulative conformal windows, a bootstrap index mismatch, a
+price vector that looked ahead, and a misleading figure label — all recorded below
+rather than silently patched.
 
 ---
 
@@ -87,10 +90,10 @@ each origin.
 Added the Poisson GLM and the two LightGBM objectives (Tweedie mean, quantile-0.5
 median).
 
-LightGBM median won the per-SKU MASE contest (**0.686**). It also had the worst
-pooled WAPE (**40.05%**), because a median forecast is below the mean for a
-right-skewed, zero-inflated target. The Poisson GLM behaved the same way at a
-smaller scale (MASE 1.219, WAPE 26.01%).
+LightGBM median won the per-SKU MASE contest (**0.686**). Its pooled WAPE was
+**40.05%**, the second-worst in the table after seasonal naive (71.09%), because a
+median forecast is below the mean for a right-skewed, zero-inflated target. The
+Poisson GLM behaved the same way at a smaller scale (MASE 1.219, WAPE 26.01%).
 
 This is the central tension of the project. It is not a metric bug: MASE rewards
 accuracy in the middle of a distribution with a large zero atom; the aggregate and
@@ -138,7 +141,7 @@ multiple horizons. The audit changed it to resample **SKUs** with replacement, u
 one index matrix per lead time so every model is compared on the same resample.
 
 Consequence: the CIs widened. The central SES-quantile saving versus SES point is
-**23.88% [21.91, 26.67]** after the fix. The earlier row bootstrap was too narrow.
+**23.82% [21.20, 26.18]** after the fix. The earlier row bootstrap was too narrow.
 This is one of the two changes the lead made to the subagent's work.
 
 ---
@@ -146,24 +149,25 @@ This is one of the two changes the lead made to the subagent's work.
 ## Session 7 — the comparator was too weak, and the claim had to shrink
 
 The original headline compared the quantile policy with the **best simple point
-rule**, SES. That is a defensible comparator but not the strongest one: at the
-central case, LightGBM-Tweedie **point** is cheaper than SES point.
+rule**, SES. That is a defensible comparator but not the cheapest point rule
+available: at the central case, LightGBM-Tweedie **point** is cheaper than SES point.
 
 Added a second comparator to every decision row:
 `best_point_model_all`, `best_point_cost_all`, `savings_vs_best_point_all_pct`.
-Against it, the central SES-quantile saving is **18.53%**, not 23.88%. At
-`Cu/Co = 1`, the SES quantile policy **loses** to the strongest point model at every
-lead time: **−7.89%** (L=2), **−11.20%** (L=4), **−1.81%** (L=8). At ratio 3 it is
+Against it, the central SES-quantile saving is **18.62%**, not 23.82%. At
+`Cu/Co = 1`, the SES quantile policy **loses** to the cheapest point rule at every
+lead time: **−7.70%** (L=2), **−10.76%** (L=4), **−1.54%** (L=8). At ratio 3 it is
 roughly break-even.
 
-The README was rewritten around that. The 23.9% number is still there, but it is
+The README was rewritten around that. The 23.82% number is still there, but it is
 labelled "versus SES point", and the negative low-asymmetry result is stated in the
 first section rather than buried.
 
-The symmetric-cost claim also had to shrink. SES gains at most 4.22% at ratio 1, but
-LightGBM median reaches **14.21%** at L=4, ratio 1 — so "the gain is small at
+The symmetric-cost claim also had to shrink. SES gains at most 4.23% at ratio 1, but
+LightGBM median reaches **13.38%** at L=4, ratio 1 — so "the gain is small at
 symmetric costs" is model-specific, not universal. The docs now say exactly that,
-and note that the LightGBM median gain collapses to 1.6% at ratio 3.
+and note that the LightGBM-median quantile gain falls to +0.54% at ratio 3 (its point
+rule falls to −18.86%).
 
 ---
 
@@ -172,9 +176,9 @@ and note that the LightGBM median gain collapses to 1.6% at ratio 3.
 Visual inspection of all seven figures found two problems:
 
 - `fig4` plotted only savings versus SES point. A reader would not see the stronger
-  comparator. Added a second row with savings versus the strongest point model.
-  The bottom row has **no CI**: the bootstrap is defined against SES, so drawing a
-  CI for the other difference would be fabricated.
+  comparator. Added a second row with savings versus the cheapest point rule in each
+  cell. The bottom row has **no CI**: the bootstrap is defined against SES, so drawing
+  a CI for the other difference would be fabricated.
 - `fig6` had overlapping model labels around the quantile cluster. Replaced fixed
   offsets with a deterministic greedy placement that tries a ring of offsets and
   keeps the first non-overlapping one.
@@ -198,10 +202,46 @@ timings. LightGBM is fitted with `deterministic=True`.
 
 ---
 
+## Session 10 — the second audit: three leaks of a subtler kind
+
+An independent read-only audit of the finished project found four defects. None of
+them changed the model ranking; all of them changed what the code was entitled to
+claim.
+
+1. **Partial windows in the cumulative conformal grid.** The aggregate grid kept
+   every calibration origin with `horizon ≤ L` and summed whatever horizons existed.
+   A late origin therefore contributed a 1-week sum to the L=8 residual distribution.
+   Fixed by requiring `t + L ≤ origin` and `n_weeks == L`; the grid's `n` now equals
+   the marginal h=L grid's `n`, and a test enforces that identity. Usable origins are
+   12 at h=1 and 11 / 9 / 5 at L = 2 / 4 / 8.
+2. **Bootstrap index mismatch.** Per-SKU costs were indexed by the global `sku_idx`,
+   which runs over the whole 3,995-SKU universe, while the bootstrap drew from 3,186
+   model SKUs. `bincount` silently allocated empty slots. Costs are now indexed by a
+   compact `factorize` code and the function asserts that its width matches the
+   bootstrap index.
+3. **Price look-ahead.** The cost vector used each SKU's full-sample median price,
+   including weeks after the forecast origin. It now uses the median up to the origin.
+   The old basis is retained only as a sensitivity: 23.82% → 23.77% versus SES and
+   18.62% → 18.41% versus the cheapest point rule, so the leak was not the source of
+   the headline.
+4. **A figure label that named one model for a row that does not use one.** `fig4`'s
+   bottom row said "LightGBM-Tweedie point", but at `Cu/Co = 1` the cheapest point
+   rule is LightGBM median. The row is labelled "vs cheapest point rule in each cell".
+
+The audit also forced a wording fix: LightGBM median is **not** the worst aggregate
+model; its 40.05% WAPE is second-worst, behind seasonal naive's 71.09%. The earlier
+sentence was a real overclaim, not a rounding difference.
+
+After the fixes the full cached run took 146 s, the suite grew to **19 tests**, and
+the central saving moved from 23.88% to 23.82% (the pre-origin price and complete
+windows), with the ranking unchanged.
+
+---
+
 ## What I would do differently
 
-1. **Decide the comparator before the first result.** The strongest point model
-   should have been in the decision table from day one, not added after an audit.
+1. **Decide the comparator before the first result.** The cheapest point rule in each
+   cell should have been in the decision table from day one, not added after an audit.
 2. **Resample the unit of independence from the start.** The row bootstrap looked
    fine and was wrong.
 3. **Model the zero atom explicitly.** A hurdle or censored model would fit the
@@ -211,13 +251,16 @@ timings. LightGBM is fitted with `deterministic=True`.
 5. **Build the decision-side bulk trim at the same time as the accuracy-side one.**
    Reporting one and not the other invites the objection that the decision result
    is driven by the tail that was trimmed elsewhere.
+6. **Test the window, not just the target.** "Realised by the origin" is not enough
+   for a cumulative distribution: the *whole* L-week window has to be realised.
+   That distinction survived nine sessions and two audits before it was caught.
 
 ---
 
 ## Honest summary
 
 The project set out to test whether calibrated probabilistic forecasts reduce
-inventory cost. They do — at high cost asymmetry, and by less against the strongest
-point model than against the weakest defensible one. At low asymmetry they can lose.
-The most accurate per-SKU point model is the worst ordering rule, which is the
-result worth remembering.
+inventory cost. They do — at high cost asymmetry, and by less against the cheapest
+point rule than against the weakest defensible one. At low asymmetry they can lose.
+The most accurate per-SKU point model is a value-destroying ordering rule, which is
+the result worth remembering.

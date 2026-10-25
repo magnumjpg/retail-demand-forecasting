@@ -237,10 +237,11 @@ quantiles); a Poisson objective (Tweedie 1.3 handles the overdispersion better i
 single model with SKU embeddings (the charter calls it optional; no evidence it earns its keep at
 this history length).
 
-**Consequence.** The median model has the best MASE (0.686) and the worst aggregate WAPE (40.05%).
-That tension is the point of the project, not an accident. The Tweedie mean has a worse MASE (0.961)
-but tracks volume better (27.10% WAPE) and is the stronger decision model among the two (22.38% vs
-18.64% at the central case). Neither is presented as universally better.
+**Consequence.** The median model has the best MASE (0.686) and the second-worst aggregate WAPE
+(40.05%; only seasonal naive is worse at 71.09%). That tension is the point of the project, not an
+accident. The Tweedie mean has a worse MASE (0.961) but tracks volume better (27.10% WAPE) and is
+the stronger decision model among the two (22.31% vs 17.58% at the central case). Neither is
+presented as universally better.
 
 ---
 
@@ -285,9 +286,11 @@ README §4. The layer is marginal within class, not SKU-conditional (LIMITATIONS
 **Context.** The conformal window must be long enough to estimate 199 quantiles per class/horizon
 but short enough to stay local and avoid using post-origin information.
 
-**Decision.** `CALIB_WEEKS = 13`; calibration origins are `origin − 12 … origin`; only rows with
-`target_idx ≤ origin` are kept, so every calibration target is realised by the forecast origin. The
-model itself is fitted on weeks ≤ `origin − 13`.
+**Decision.** `CALIB_WEEKS = 13`; candidate calibration origins are `origin − 12 … origin`; only
+rows with `target_idx ≤ origin` are kept, so every calibration target is realised by the forecast
+origin. For h=1 that leaves 12 usable origins, because the origin itself has no realised next-week
+target; the cumulative L-week grids use 11 / 9 / 5 origins at L = 2 / 4 / 8. The model itself is
+fitted on weeks ≤ `origin − 13`.
 
 **Alternatives.** 8 weeks (too few rows for the tail and for small classes); 26 weeks (more stable,
 but spans a longer regime and overlaps more of the test window); a fixed expanding window (not
@@ -309,7 +312,10 @@ within the window).
 **Decision.** For each calibration origin, SKU and L, compute `y_L = Σ y_h` and `μ_L = Σ μ_h`, then
 `z_L = (y_L − μ_L) / sqrt(μ_L + 0.25)` and empirical quantiles per demand class on the same
 199-point grid. The order is `μ_L + sqrt(μ_L + 0.25) · Q_{z_L}(CR)`. Grids are stored with
-`kind = "aggregate"`.
+`kind = "aggregate"`. A calibration origin enters only when its **whole** L-week window is realised
+by the forecast origin (`t + L ≤ origin`); partial windows are excluded rather than summed over
+fewer than L weeks. The test suite asserts that each aggregate grid has the same `n` as the
+corresponding marginal h=L grid.
 
 **Alternatives.** Sum marginal quantiles (wrong dependence); simulate paths from a copula (more
 assumptions, no clear gain at this sample size); a Dirichlet/compound model (does not fit the
@@ -333,18 +339,22 @@ Co = 0.01 × unit_price × L
 Cu = (Cu/Co) × Co,  Cu/Co ∈ {1, 3, 9, 19}
 CR = Cu / (Cu + Co) ∈ {0.5, 0.75, 0.9, 0.95}
 ```
-`unit_price` is the SKU's median observed price, winsorised at p99.5. All values live in
-`config.py` and are written to `results.json.decision.assumptions`.
+`unit_price` is the SKU's median observed price **up to each forecast origin**, winsorised at
+p99.5; the full-sample median is used only for the price-basis sensitivity in `results.json`. It
+is also the code's fallback for a SKU with no positive pre-origin revenue, a case excluded by the
+model-sample rule (≥12 positive pre-origin weeks), and `run_decision` asserts that it never binds
+on an evaluated SKU. All values live in `config.py` and the derived assumptions are written to
+`results.json.decision.assumptions`.
 
 **Alternatives.** A single cost ratio (hides the dependence of the conclusion on asymmetry);
 revenue-based margin (not observed); a fixed currency holding cost (ignores that a £1 item and a
 £50 item do not cost the same to hold); estimating `Co` from the data (impossible).
 
 **Consequence.** Absolute costs scale with price and L and are not a P&L claim. For the SES
-quantile policy, at `Cu/Co = 1` the critical ratio is 0.5 and the saving is at most 4.22%; the
-grid's maximum at ratio 1 is 14.21% (LightGBM median, L=4), but that model drops to 1.6% at ratio
-3. The sweep, not one cell, is the evidence. The central case (L=4, ratio 9) is a reporting
-convention, not an estimate of the retailer's true costs.
+quantile policy, at `Cu/Co = 1` the critical ratio is 0.5 and the saving is at most 4.23%; the
+grid's maximum at ratio 1 is 13.38% (LightGBM-median quantile, L=4), but that model's quantile rule
+falls to +0.54% at ratio 3. The sweep, not one cell, is the evidence. The central case (L=4,
+ratio 9) is a reporting convention, not an estimate of the retailer's true costs.
 
 ---
 
@@ -367,9 +377,11 @@ conservative (the baseline is as strong as it can be on this sample), but it use
 information to select the comparator. It is not a pre-registered incumbent. The number to quote is
 "versus SES point on these cells", not "versus the company's current policy". The oracle is
 labelled clairvoyant and its zero cost is not an achievable result. A second, stronger comparator
-is also recorded: the best **point model across all seven models** at the central case is
-LightGBM Tweedie point, and the SES quantile saves **18.53%** against it
-(`headline.decision.central_case_quantile.savings_vs_best_point_all_pct`).
+is also recorded: the **cheapest point rule in each cell**. At the central case that is LightGBM
+Tweedie point, and the SES quantile saves **18.62%** against it
+(`headline.decision.central_case_quantile.savings_vs_best_point_all_pct`). The identity of that
+rule changes with the cell — LightGBM median at `Cu/Co = 1`, LightGBM Tweedie above it — which is
+why the docs call it "the cheapest point rule in the cell", not "the strongest model".
 
 ---
 
@@ -380,7 +392,10 @@ correlated and there are only three of them.
 
 **Decision.** Resample SKUs with replacement 500 times (`numpy.default_rng(20261024)`), recompute
 the difference in mean cost, and report the 2.5/97.5 percentiles. The same index matrix is used
-for every model and cell within an L, so the comparison is paired.
+for every model and cell within an L, so the comparison is paired. Per-SKU cost vectors are
+indexed by a compact `factorize` code (0…n−1); the function asserts that its width equals the
+bootstrap index width, because the global `sku_idx` runs over the whole universe and would
+silently leave empty slots or draw the wrong SKUs.
 
 **Alternatives.** A bootstrap over origins (only three, too few); a block bootstrap over time (the
 test window is short and the origins overlap); a parametric CI on the mean (ignores the heavy
@@ -485,7 +500,7 @@ hidden. Figures are descriptive, not inferential.
 **Context.** A test suite that hard-codes today's MASE would fail on every legitimate model change
 and would not catch the failures that matter (leakage, broken spine, bad accounting).
 
-**Decision.** 13 tests:
+**Decision.** 19 tests:
 1. no negative demand and a plausible zero share;
 2. complete 104-week calendar spine, one row per SKU-week;
 3. cleaning audit reconciles row by row;
@@ -498,7 +513,13 @@ and would not catch the failures that matter (leakage, broken spine, bad account
 10. the decision sweep covers the charter grid;
 11. `results.json` has the contract keys, 7 models, 171 decision rows, 3,186 SKUs;
 12. the headline best-MASE model matches the table and the central case is L=4, ratio 9;
-13. docs, `requirements.txt` and ≥5 non-empty figures exist.
+13. docs, `requirements.txt` and ≥5 non-empty figures exist;
+14. every aggregate conformal grid has the same `n` as the marginal h=L grid (complete windows);
+15. the bootstrap rejects a non-compact SKU index and is relabel-invariant;
+16. `price_vector(origin)` is unchanged when every post-origin week is perturbed;
+17. the headline numbers match `decision.csv` and `results.json` (central and best cells);
+18. the price-basis sensitivity is stored and does not reverse the central result;
+19. coverage is below target at h=1 and above it at h=4, as reported.
 
 **Alternatives.** A golden-master regression on every number (brittle, and would freeze bugs); no
 tests (fails the charter); only smoke tests (would not catch leakage).
@@ -518,10 +539,10 @@ pipeline-generated.
 **Decision.** `src/run_all.py` runs each stage in a separate process (`download`, `clean`,
 `backtest`, `decision`, `figures`), streams logs, then assembles `outputs/results.json` from the
 stage artefacts and runs the tests. Flags: `--from-cache` (reuse the transaction parquet),
-`--force-clean` (re-read the workbook), `--skip-tests`. The default is a full clean from the
-workbook. The file records `meta.versions`, `meta.stage_seconds`, `meta.git_commit` (when git is
-available), the data audit, accuracy, calibration, cold start, decision rows, headline fields,
-figure inventory and quality checks.
+`--force-download` (ignore the cached zip and fetch it again), `--skip-tests`. The default is a
+full clean from the workbook. The file records `meta.versions`, `meta.stage_seconds`,
+`meta.git_commit` (when git is available), the data audit, accuracy, calibration, cold start,
+decision rows, headline fields, figure inventory and quality checks.
 
 **Alternatives.** A notebook (not one command, hidden state); a Makefile (less portable on
 Windows); separate scripts with no assembly (docs drift from artefacts); committing a hand-written
@@ -529,7 +550,7 @@ results file (violates the traceability gate).
 
 **Consequence.** The docs quote fields of `results.json`, not numbers typed from a console. A
 failed test makes the build exit non-zero. `--from-cache` is for iteration; the release run must
-use the default (or `--force-clean`) so the audit is rebuilt from the verified workbook.
+use the default so the audit is rebuilt from the verified workbook.
 
 ---
 
@@ -576,6 +597,19 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
   NaN before caching; otherwise the panel loses codes or crashes on mixed types.
 - **Pandas constructor.** `pd.DataFrame(list_of_dfs)` fails on this pandas build; use
   `pd.concat(..., ignore_index=True)`.
+
+**Found by the external audit of the finished project (all fixed).**
+- **Partial cumulative windows.** The aggregate conformal grid summed `horizon ≤ L` over every
+  calibration origin, so late origins contributed 1- or 2-week sums to an L-week distribution.
+  Only origins with `t + L ≤ origin` now enter, and a test checks `n` against the marginal h=L grid.
+- **Bootstrap index mismatch.** Per-SKU cost vectors were indexed by the global `sku_idx` (up to
+  ~4,000) while the bootstrap index had 3,186 columns, so `bincount` allocated empty slots. Costs
+  are now indexed by a compact factorized code with an assertion on the width.
+- **Price look-ahead.** The cost vector used the full-sample median price, including weeks after
+  the forecast origin. It now uses the pre-origin median; the full-sample version is retained only
+  as a sensitivity (23.82 → 23.77% vs SES).
+- **Figure label.** `fig4`'s bottom row named LightGBM-Tweedie, but at `Cu/Co = 1` the cheapest
+  point rule is LightGBM median. The row is labelled "vs cheapest point rule in each cell".
 
 **Open.**
 - `meta.git_commit` is `null` in runs made before the repository is initialised. The release run

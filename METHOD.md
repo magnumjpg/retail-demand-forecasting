@@ -117,8 +117,10 @@ needs a positive upper quantile). This replaced an earlier negative-binomial var
 For each origin `O` and each model:
 
 1. The model is fitted on weeks ≤ `O − 13`.
-2. On each calibration origin `t ∈ [O − 12, O]`, forecasts are made for h = 1…8. Only targets
-   with `t + h ≤ O` are kept, so the calibration set contains only realised values.
+2. On each candidate calibration origin `t ∈ [O − 12, O]`, forecasts are made for h = 1…8. Only
+   targets with `t + h ≤ O` are kept, so the calibration set contains only realised values. For
+   h = 1 this leaves **12** usable origins (the origin itself has no realised next-week target):
+   11 at L = 2, 9 at L = 4 and 5 at L = 8 for the cumulative grids.
 3. `z` is computed and its empirical quantile function `Q_z` is estimated on a grid of 199
    probabilities (`0.005 … 0.995`), **separately for each demand class** (Mondrian conformal).
    If a class has <30 rows at a horizon, the pooled grid is used.
@@ -137,9 +139,15 @@ quantiles (which would ignore dependence). A separate conformal grid is therefor
 (`kind = "aggregate"`):
 
 - for each calibration origin and SKU, `y_L = Σ_{h=1..L} y_h` and `μ_L = Σ μ_h`;
+- **only complete L-week windows are used**: a calibration origin `t` enters the cumulative grid
+  only if `t + L ≤ O`, so every `y_L` is the sum of exactly L realised weeks. A late origin with a
+  partial window would otherwise mix a 1- or 2-week sum into an L-week residual distribution;
 - `z_L = (y_L − μ_L) / sqrt(μ_L + 0.25)`;
 - empirical quantiles per demand class, same 199-point grid;
 - the order is `μ_L + sqrt(μ_L + 0.25) · Q_{z_L}(CR)`.
+
+The complete-window rule is tested: for every origin, model and class the aggregate grid's `n`
+must equal the corresponding marginal h=L grid's `n`.
 
 This captures the empirical within-window correlation of the residuals, but it does **not** model
 dynamic inventory: it is a single order covering L weeks, with no carry-over between weeks and no
@@ -184,9 +192,13 @@ Cu = (Cu/Co ratio) × Co             # lost margin per unit short
 CR = Cu / (Cu + Co)                 # critical ratio ∈ {0.5, 0.75, 0.9, 0.95}
 ```
 
-`unit_price` is the SKU's median observed price, winsorised at the 99.5th percentile. The four
-ratios are 1, 3, 9, 19. `Co` and `Cu` are **assumptions**; absolute costs are price-scaled and are
-not a P&L claim. Only comparisons within the same cost grid are meaningful.
+`unit_price` is the SKU's median observed price **over weeks up to the forecast origin**,
+winsorised at the 99.5th percentile; the full-sample median is used only in the price-basis
+sensitivity. The four ratios are 1, 3, 9, 19. `Co` and `Cu` are **assumptions**; absolute costs
+are price-scaled and are not a P&L claim. Only comparisons within the same cost grid are
+meaningful. Costing the same central-case orders with the full-sample price instead of the
+pre-origin price changes the headline from 23.82% to 23.77% (vs SES) and from 18.62% to 18.41%
+(vs the cheapest point rule), so the no-look-ahead choice is not driving the result.
 
 ### 6.2 Policies
 
@@ -210,23 +222,27 @@ Savings are always relative to the **best simple point rule** among historical m
 naive, SES and Croston/SBA, at the same L and cost ratio. In every one of the 168
 model × policy × L × ratio cells that baseline is SES (point).
 
-A second comparator is recorded for every cell: the **strongest point model overall** (the cheapest
-point policy in that cell; LightGBM Tweedie at the central case). The saving against it is reported
-without a CI. The bootstrap below is defined against SES point, so attaching that interval to a
-different difference would be a fabricated CI. The two benchmarks answer different questions — "does
-the distribution beat a simple rule?" and "does it beat the best point model I have?" — and the
+A second comparator is recorded for every cell: the **cheapest point rule in that cell** (the
+lowest-cost point policy among all seven models; LightGBM Tweedie at the central case,
+LightGBM median at `Cu/Co = 1`). The saving against it is reported without a CI. The bootstrap
+below is defined against SES point, so attaching that interval to a different difference would
+be a fabricated CI. The two benchmarks answer different questions — "does the distribution beat
+a simple rule?" and "does it beat the cheapest point rule available in this cell?" — and the
 README reports both, including the cells where the second answer is negative.
 
 The 95% CI is a bootstrap over SKUs: 500 resamples with replacement of the per-SKU cost vectors,
-recomputing the difference in mean cost. It reflects cross-sectional heterogeneity, **not**
-uncertainty over time, model specification or cost assumptions. The cost assumptions are swept
-instead of bootstrapped.
+recomputing the difference in mean cost. The per-SKU vectors are indexed by a compact `0…n_sku−1`
+code (not the global SKU index, which covers the whole universe); the function asserts that this
+code space matches the width of the bootstrap index, because a silent mismatch would drop SKUs or
+draw the wrong ones. The interval reflects cross-sectional heterogeneity, **not** uncertainty over
+time, model specification or cost assumptions. The cost assumptions are swept instead of
+bootstrapped.
 
 ### 6.4 Worst SKUs
 
 At the focal cell (L = 4, Cu/Co = 9, LightGBM-median quantile policy), per-SKU costs are summed
 across origins; the top 20 by cost are exported with description, class, price, demand and order.
-The 20 SKUs account for 16.85% of total focal cost.
+The 20 SKUs account for 16.15% of total focal cost.
 
 ## 7. Sensitivities
 

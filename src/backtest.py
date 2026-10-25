@@ -77,14 +77,20 @@ def conformal_grids(y, mu, cls, horizon, origin, model, store, kind="horizon"):
 def aggregate_grids(cal, mu_cal, model, cls, origin, store):
     """Conformal grid for L-week *cumulative* demand (newsvendor horizon).
 
-    Uses the same calibration origins, summing weeks 1..L of each origin; only
-    cumulative windows fully realised by the forecast origin are kept.
+    Uses the same calibration origins, summing weeks 1..L of each origin. Only
+    **complete** L-week windows are kept: a calibration origin ``t`` enters only
+    if ``t + L <= origin``. Otherwise the group for late origins would sum 1..k
+    weeks (k < L) and the grid would mix partial and complete windows, which is
+    not the residual distribution the decision rule assumes.
     """
     for L in C.LEAD_TIMES:
-        sub = cal[cal["horizon"] <= L].copy()
+        sub = cal[(cal["horizon"] <= L)
+                  & (cal["origin_idx"] <= origin - L)].copy()
         sub["mu"] = mu_cal[model][sub.index.to_numpy()]
         g = (sub.groupby(["origin_idx", "sku_idx"], as_index=False)
-                .agg(yL=("y", "sum"), muL=("mu", "sum"), sku=("sku_idx", "first")))
+                .agg(yL=("y", "sum"), muL=("mu", "sum"),
+                     n_weeks=("y", "size"), sku=("sku_idx", "first")))
+        g = g[g["n_weeks"] == L]
         if len(g) < 50:
             continue
         klass = cls[g["sku"].to_numpy()]

@@ -46,8 +46,8 @@ are assumptions. The absolute cost level and the optimal policy depend on them.
 The response is not to defend one number but to **sweep the assumptions**. Every
 cell of the 3 lead times × 4 ratios grid is in `decision.csv`. The honest statement
 is conditional: *if* holding costs are around 1% per week and the underage/overage
-ratio is 9, then the SES quantile policy saves 23.9% versus SES point and 18.5%
-versus the strongest point model. Change the ratio to 1 and the same policy loses.
+ratio is 9, then the SES quantile policy saves 23.82% versus SES point and 18.62%
+versus the cheapest point rule in that cell. Change the ratio to 1 and the same policy loses.
 
 No margin, stockout penalty, salvage value, MOQ, capacity constraint or lead-time
 variability is observed. A real implementation would change the answer.
@@ -73,8 +73,9 @@ primary specification.
 ## "Your MASE winner contradicts your decision claim. Which metric is right?"
 
 **Both, for different questions.** LightGBM median has the best per-SKU MASE
-(0.686) and the worst pooled WAPE (40.05%), and it destroys value as an ordering
-rule (−38.94% versus SES point at the central case).
+(0.686) and the second-worst pooled WAPE (40.05%, better only than seasonal naive's
+71.09%), and it destroys value as an ordering rule (−39.01% versus SES point at the
+central case).
 
 MASE is computed SKU by SKU and rewards getting the middle of a zero-inflated
 distribution right. Pooled WAPE and the newsvendor care about total volume, and a
@@ -97,16 +98,17 @@ better *ordering* input even though it is the worse *forecasting* model.
 This is not a claim that SES is generally superior. It is a claim about this data,
 this cost model and this evaluation. A production system with hierarchical
 reconciliation might recover the ML advantage, which is exactly the next step in
-LIMITATIONS §10.
+LIMITATIONS §5, item 4.
 
 ---
 
-## "The 18.5% versus the strongest point model is itself selected on the same cells."
+## "The 18.62% versus the cheapest point rule is itself selected on the same cells."
 
 **Conceded.** `best_point_model_all` is chosen by looking at the cheapest point
 policy in the evaluation table. That makes it a conservative comparator on this
 sample, but it is not a pre-registered incumbent, and the selection uses test
-information.
+information. Its identity is not stable: LightGBM median at `Cu/Co = 1`,
+LightGBM Tweedie above it, which is why the docs do not name a single model.
 
 The same caveat applies to the SES baseline: "best simple point rule" is chosen on
 the evaluation cells. The correct reading is "versus the best point rule on these
@@ -138,7 +140,7 @@ for cumulative demand is built separately (D14), so the decision is internally
 consistent, but the reader cannot see the h=8 forecast error.
 
 This is a reporting gap, not a computational error. The L=8 result is the largest
-saving in the grid (47.8% / 45.9%), so the gap matters. Adding h=8 accuracy is the
+saving in the grid (48.81% / 46.96%), so the gap matters. Adding h=8 accuracy is the
 first thing to do next.
 
 ---
@@ -152,19 +154,19 @@ substitution. Real replenishment has all five.
 The project does not claim deployability. It claims that, *within this decision
 model*, the distribution has value at high asymmetry and can lose at low asymmetry.
 A production evaluation needs a multi-period simulation with those constraints;
-that is LIMITATIONS §10.1.
+that is LIMITATIONS §3.1.
 
 ---
 
-## "You are reporting a 23.9% saving from a model that cannot even beat SES on aggregate error."
+## "You are reporting a 23.82% saving from a model that cannot even beat SES on aggregate error."
 
-**The premise is wrong: the quantile policy uses SES.** The 23.9% is SES **plus the
+**The premise is wrong: the quantile policy uses SES.** The 23.82% is SES **plus the
 conformal distribution layer**, compared with SES point. The point model is held
 constant; the only change is ordering at a quantile instead of the mean. That is
 precisely the project's claim: the distribution layer, not a fancier point model,
 is what creates the value.
 
-The same LightGBM-Tweedie mean moves from 6.56% as a point rule to 22.38% as a
+The same LightGBM-Tweedie mean moves from 6.39% as a point rule to 22.31% as a
 quantile rule. If the result were driven by model sophistication, that gap would
 not exist.
 
@@ -174,10 +176,10 @@ not exist.
 
 **No: it has both, and it labels them.** The positive result is conditional on high
 cost asymmetry. The negative results are explicit: at ratio 1 the policy loses to
-the strongest point model; seasonal naive and Croston fail; the median model wins
+the cheapest point rule; seasonal naive and Croston fail; the median model wins
 MASE and loses money; the decision side is not bulk-trimmed; five horizons are not
 evaluated.
 
-A reader who takes only "23.9%" from this project has ignored half the document.
+A reader who takes only "23.82%" from this project has ignored half the document.
 That is why the first section states the negative case in the same paragraph as the
 headline.

@@ -337,7 +337,7 @@ def main(argv=None) -> int:
     print(f"[run_all] central decision (L={c['lead_time']}, Cu/Co={c['cost_ratio']}): "
           f"{c['model']} quantile saves {c['savings_vs_best_simple_point_pct']:.1f}% "
           f"[{c['ci_low_pct']:.1f}, {c['ci_high_pct']:.1f}] vs {c['best_baseline']} point; "
-          f"{c['savings_vs_best_point_all_pct']:.1f}% vs the best point model "
+          f"{c['savings_vs_best_point_all_pct']:.1f}% vs the cheapest point rule in that cell "
           f"({c['best_point_model_all']})")
     return 0
 

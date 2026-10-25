@@ -36,9 +36,27 @@ DECISION_JSON = C.DATA_PROC / "_decision.json"
 SIMPLE = list(BASELINES)
 
 
-def price_vector(p) -> np.ndarray:
-    """Unit-value proxy: median observed price, winsorised at p99.5."""
-    pr = p.meta["median_price"].to_numpy(dtype=float)
+def price_vector(p, origin: int | None = None) -> np.ndarray:
+    """Unit-value proxy: median observed price per SKU, winsorised at p99.5.
+
+    With ``origin`` set, only weeks up to that origin are used, so the cost
+    vector contains no information from the evaluation window. ``origin=None``
+    uses the full sample and exists only for the sensitivity stored in
+    ``results.json``. The full-sample median is also the fallback for a SKU with
+    no positive revenue before ``origin``; that case cannot occur on the model
+    sample, whose selection requires at least 12 positive pre-origin weeks
+    (asserted in ``run_decision``).
+    """
+    fallback = p.meta["median_price"].to_numpy(dtype=float)
+    if origin is None:
+        pr = fallback.copy()
+    else:
+        d = p.D[:, : origin + 1]
+        r = p.R[:, : origin + 1]
+        with np.errstate(invalid="ignore", divide="ignore"):
+            px = np.where(d > 0, r / np.maximum(d, 1e-9), np.nan)
+        pr = pd.DataFrame(px).median(axis=1, skipna=True).to_numpy(dtype=float)
+        pr = np.where(np.isfinite(pr), pr, fallback)
     pos = pr[pr > 0]
     cap = np.quantile(pos, 0.995) if len(pos) else 1.0
     pr = np.clip(np.where(np.isfinite(pr), pr, np.median(pos)), 0.01, cap)
@@ -64,10 +82,10 @@ def order_quantile(mu, zgrid, q):
     return np.clip(mu + np.sqrt(np.maximum(mu, 0) + 0.25) * z, 0, None)
 
 
-def evaluate(g: pd.DataFrame, Q: np.ndarray, L: int, price: np.ndarray,
+def evaluate(g: pd.DataFrame, Q: np.ndarray, L: int, price_rows: np.ndarray,
              ratio: float) -> dict:
     y = g["y"].to_numpy()
-    co = C.HOLD_COST_WEEK * price[g["sku_idx"].to_numpy()] * L
+    co = C.HOLD_COST_WEEK * price_rows * L
     cu = ratio * co
     over = np.maximum(Q - y, 0)
     under = np.maximum(y - Q, 0)
@@ -103,6 +121,9 @@ def bootstrap_savings(cost_model: np.ndarray, cost_base: np.ndarray,
     n_sku = int(codes.max()) + 1
     cm = np.bincount(codes, weights=cost_model, minlength=n_sku)
     cb = np.bincount(codes, weights=cost_base, minlength=n_sku)
+    assert n_sku == idx.shape[1], (
+        f"bootstrap index has {idx.shape[1]} SKUs but cost arrays have {n_sku}; "
+        "codes must be factorised to 0..n_sku-1")
     s = 1 - cm[idx].sum(axis=1) / np.maximum(cb[idx].sum(axis=1), 1e-9)
     return float(np.percentile(s, 2.5) * 100), float(np.percentile(s, 97.5) * 100)
 
@@ -111,8 +132,15 @@ def run_decision(save: bool = True) -> dict:
     p = load_panel()
     fc = pd.read_parquet(C.FORECASTS)
     grids = pd.read_csv(C.RESIDUALS)
-    price = price_vector(p)
     mask = model_mask(p)
+    origin_list = sorted(fc["origin"].unique().tolist())
+    # Every model SKU has >= 12 positive weeks before the first origin, so its
+    # pre-origin price is observed and the full-sample fallback never binds.
+    for o in origin_list:
+        assert (p.D[mask, : int(o) + 1] > 0).any(axis=1).all(), (
+            f"a model SKU has no pre-origin price at origin {o}")
+    prices = {int(o): price_vector(p, int(o)) for o in origin_list}
+    price_full = price_vector(p)          # sensitivity only
     rng = np.random.default_rng(C.BOOTSTRAP_SEED)
 
     rows = []
@@ -124,9 +152,19 @@ def run_decision(save: bool = True) -> dict:
         g = cumulative_targets(fc, L)
         g = g[g["StockCode"].isin(p.model_skus)].reset_index(drop=True)
         y = g["y"].to_numpy()
-        codes = g["sku_idx"].to_numpy()
         n_sku = int(g["sku_idx"].nunique())
-        # per-SKU cost arrays for the bootstrap
+        # factorise to a compact 0..n_sku-1 index: the global sku_idx runs to
+        # ~4,000 because it covers the whole universe, so bincount on it would
+        # allocate empty slots and the bootstrap draw would miss model SKUs
+        codes = pd.factorize(g["sku_idx"], sort=True)[0]
+        price_rows = np.empty(len(g), dtype=float)
+        for o, pv in prices.items():
+            sel = (g["origin"] == o).to_numpy()
+            price_rows[sel] = pv[g.loc[sel, "sku_idx"].to_numpy()]
+        price_rows_full = np.empty(len(g), dtype=float)
+        for o in origin_list:
+            sel = (g["origin"] == o).to_numpy()
+            price_rows_full[sel] = price_full[g.loc[sel, "sku_idx"].to_numpy()]
         per_sku = {}
         eval_rows = {}
 
@@ -155,7 +193,7 @@ def run_decision(save: bool = True) -> dict:
                                 z[sel] = np.interp(cr, QGRID, gz["z"].to_numpy())
                         Q = np.clip(mu + np.sqrt(np.maximum(mu, 0) + 0.25) * z, 0, None)
                     key = (model, policy, ratio)
-                    res = evaluate(g, Q, L, price, ratio)
+                    res = evaluate(g, Q, L, price_rows, ratio)
                     res.update({"lead_time": L, "model": model, "policy": policy,
                                 "cost_ratio": ratio})
                     rows.append(res)
@@ -163,15 +201,42 @@ def run_decision(save: bool = True) -> dict:
                     if L == 4 and model == "lgbm_quantile" and policy == "quantile" \
                             and ratio == 9:
                         focal_Q = Q
-                    co = C.HOLD_COST_WEEK * price[g["sku_idx"].to_numpy()] * L
+                    co = C.HOLD_COST_WEEK * price_rows * L
                     cu = ratio * co
                     per_sku[key] = (co * np.maximum(Q - y, 0) + cu * np.maximum(y - Q, 0))
 
         # oracle: order exactly the realised L-week demand
-        res = evaluate(g, g["y"].to_numpy(), L, price, 1.0)
+        res = evaluate(g, g["y"].to_numpy(), L, price_rows, 1.0)
         res.update({"lead_time": L, "model": "oracle", "policy": "clairvoyant",
                     "cost_ratio": np.nan})
         rows.append(res)
+
+        # Price-basis sensitivity at the central cell: the same orders costed
+        # with the full-sample median price instead of the pre-origin one. The
+        # primary path is pre-origin; this only quantifies the look-ahead.
+        if L == 4:
+            q_ses = eval_rows[("ses", "quantile", 9)][0]
+            mu_tw = g["mu__lgbm_tweedie"].to_numpy()
+            mu_ses = g["mu__ses"].to_numpy()
+            c_ses_pre = eval_rows[("ses", "quantile", 9)][1]
+            c_ses_full = evaluate(g, q_ses, 4, price_rows_full, 9)["total_cost"]
+            c_base_pre = eval_rows[("ses", "point", 9)][1]
+            c_base_full = evaluate(g, mu_ses, 4, price_rows_full, 9)["total_cost"]
+            c_tw_pre = evaluate(g, mu_tw, 4, price_rows, 9)["total_cost"]
+            c_tw_full = evaluate(g, mu_tw, 4, price_rows_full, 9)["total_cost"]
+            price_sensitivity = {
+                "note": ("same orders, costed with the pre-origin median price "
+                         "(primary) versus the full-sample median price"),
+                "lead_time": 4, "cost_ratio": 9,
+                "ses_quantile_vs_ses_point_pct": {
+                    "pre_origin_price": round((1 - c_ses_pre / c_base_pre) * 100, 2),
+                    "full_sample_price": round((1 - c_ses_full / c_base_full) * 100, 2),
+                },
+                "ses_quantile_vs_tweedie_point_pct": {
+                    "pre_origin_price": round((1 - c_ses_pre / c_tw_pre) * 100, 2),
+                    "full_sample_price": round((1 - c_ses_full / c_tw_full) * 100, 2),
+                },
+            }
 
         # ---- savings vs the best *point* rule among the simple baselines
         idx = rng.integers(0, n_sku, size=(C.N_BOOTSTRAP, n_sku))
@@ -243,7 +308,9 @@ def run_decision(save: bool = True) -> dict:
     summary = {
         "assumptions": {
             "holding_cost_per_week_of_unit_price": C.HOLD_COST_WEEK,
-            "unit_price": "median observed price per SKU, winsorised at p99.5",
+            "unit_price": ("median observed price per SKU up to each forecast "
+                           "origin, winsorised at p99.5 (no look-ahead)"),
+            "price_basis_sensitivity": price_sensitivity,
             "cost_ratios_swept": list(C.COST_RATIOS),
             "lead_times_weeks": list(C.LEAD_TIMES),
             "critical_ratio": {str(r): round(r / (1 + r), 4) for r in C.COST_RATIOS},

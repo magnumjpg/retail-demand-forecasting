@@ -14,31 +14,33 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 
 1. **Probabilistic ordering is worth real money at high cost ratios, and the SES policy's value is
    concentrated there.** At a 4-week lead time and `Cu/Co = 9` (critical ratio 0.90), ordering at
-   the 90th percentile of an SES forecast cuts total cost by **23.9%** versus the best simple
-   point rule (SES; 95% bootstrap CI over SKUs: **21.9% to 26.7%**), and by **18.5%** versus the
-   strongest point model overall (LightGBM-Tweedie point). At the most asymmetric grid point
-   (`L = 8`, `Cu/Co = 19`) the saving is **47.8%** versus SES point (CI **45.7% to 50.7%**) and
-   **45.9%** versus the strongest point model. For SES, at `Cu/Co = 1` the gain over SES point
-   is **4.2%** or less (L=2: 4.22%, L=4: 3.71%, L=8: 1.65%) and at ratio 3 it is at most **4.74%**.
-   The grid's largest ratio-1 saving is **14.21%** (LightGBM median, L=4), but that model falls to
-   **1.6%** at ratio 3, so it is not a stable symmetric-cost result; the SES pattern is the robust
-   one. Against the strongest point model the picture is harsher: at `Cu/Co = 1` the SES quantile
-   policy **loses** to it at every lead time (L=2 **−7.9%**, L=4 **−11.2%**, L=8 **−1.8%**), and at
-   ratio 3 it is roughly break-even (+0.1%, −1.4%, +1.4%).
+   the 90th percentile of an SES forecast cuts total cost by **23.82%** versus the best simple
+   point rule (SES; 95% bootstrap CI over SKUs: **21.20% to 26.18%**), and by **18.62%** versus the
+   cheapest point rule in that cell (LightGBM-Tweedie point). At the most asymmetric grid point
+   (`L = 8`, `Cu/Co = 19`) the saving is **48.81%** versus SES point (CI **46.36% to 51.18%**) and
+   **46.96%** versus the cheapest point rule. For SES, at `Cu/Co = 1` the gain over SES point
+   is **4.23%** or less (L=2: 4.23%, L=4: 3.83%, L=8: 1.67%) and at ratio 3 it is at most **5.12%**.
+   The grid's largest ratio-1 saving is **13.38%** (LightGBM-median quantile, L=4), but that
+   model's quantile rule falls to **+0.54%** at ratio 3, so it is not a stable symmetric-cost
+   result; the SES pattern is the robust one. Against the cheapest point rule the picture is
+   harsher: at `Cu/Co = 1` the SES quantile policy **loses** at every lead time (L=2 **−7.70%**,
+   L=4 **−10.76%**, L=8 **−1.54%**), and at ratio 3 it is roughly break-even (+0.18%, −1.47%,
+   +1.82%).
 
 2. **The simplest calibrated model wins the decision, not the most complex one.**
-   At the central case, SES + conformal quantiles saves **23.9%** versus SES point and **18.5%**
-   versus the strongest point model; LightGBM-Tweedie + conformal saves **22.4%** and **16.9%**;
-   LightGBM-median + conformal **18.6%** and **12.9%**. The best simple point baseline is SES in
+   At the central case, SES + conformal quantiles saves **23.82%** versus SES point and **18.62%**
+   versus the cheapest point rule; LightGBM-Tweedie + conformal saves **22.31%** and **17.01%**;
+   LightGBM-median + conformal **17.58%** and **11.95%**. The best simple point baseline is SES in
    **168 of 168** model × policy × lead-time × cost-ratio cells.
 
 3. **Accuracy and decision value are not the same thing.**
    LightGBM median has the best per-SKU MASE at h=1 (**0.686**, versus SES **0.819** and
-   seasonal naive **1.723**), yet it forecasts the *aggregate* volume worst: pooled WAPE
-   **40.1%**, because a median forecast under-orders by construction. SES tracks aggregate
-   volume to **7.6%** WAPE and wins the newsvendor. The distribution layer matters more than
-   the point model: the same LightGBM-Tweedie mean moves from **6.6%** savings as a point rule
-   to **22.4%** as a quantile rule.
+   seasonal naive **1.723**), yet its *aggregate* volume error is the **second-worst** in the
+   table: pooled WAPE **40.1%**, better only than seasonal naive (71.1%), because a median
+   forecast under-orders by construction. SES tracks aggregate volume to **7.6%** WAPE and wins
+   the newsvendor. The distribution layer matters more than the point model: the same
+   LightGBM-Tweedie mean moves from **6.39%** savings as a point rule to **22.31%** as a quantile
+   rule.
 
 4. **The data is dominated by zeros and a few bulk orders.**
    **46.9%** of model-sample SKU-weeks have zero demand; the top **1%** of invoices carry
@@ -46,11 +48,11 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
    observations but **14.9%** of demand, and improves every model's MASE without changing the
    ranking. Conclusions are directionally robust, but absolute errors are not.
 
-5. **What fails is predictable.** Seasonal naive loses badly (MASE **1.723**; −112% decision
+5. **What fails is predictable.** Seasonal naive loses badly (MASE **1.723**; −129.8% decision
    value at the central case). The first fit window is 65 weeks (to 2011-02-28): one seasonal
    cycle, not two, and the two Decembers differ sharply, so a single lag-52 rule is fragile.
    Croston/SBA is worse than the historical mean on this data (**1.569** vs **1.319**). SKUs
-   with a bulk-order week account for most of the worst-cost list: the top 20 SKUs are **16.9%**
+   with a bulk-order week account for most of the worst-cost list: the top 20 SKUs are **16.15%**
    of total newsvendor cost.
 
 ---
@@ -75,6 +77,9 @@ selection is frozen on pre-origin data. See [DATA.md](DATA.md) for the full row/
 Backtest: origins **2011-05-30**, **2011-07-25**, **2011-09-19**; 26-week test window;
 3,186 SKUs × 3 origins = **9,558** SKU-week observations per horizon. Models are fitted only up
 to `origin − 13 weeks`; the 13-week conformal window uses only targets realised by the origin.
+For a cumulative `L`-week grid, a calibration origin enters only when its whole window is
+realised (`t + L ≤ origin`), so 12 calibration origins are usable at h=1 and 11 / 9 / 5 at
+`L = 2 / 4 / 8`; partial windows are never mixed into a cumulative residual grid.
 
 ---
 
@@ -111,9 +116,10 @@ distribution; the aggregate and decision metrics expose the cost of that bias.
 | LightGBM median | 40.05% |
 | Seasonal naive | 71.09% |
 
-This is the central tension of the project: the model with the best per-SKU error is the worst
-at total volume, and the newsvendor punishes that. A production system would reconcile SKU
-forecasts to a volume plan; we do not, and we say so in [LIMITATIONS.md](LIMITATIONS.md).
+This is the central tension of the project: the model with the best per-SKU error has the
+second-worst aggregate WAPE (only seasonal naive is worse), and the newsvendor punishes that.
+A production system would reconcile SKU forecasts to a volume plan; we do not, and we say so
+in [LIMITATIONS.md](LIMITATIONS.md).
 
 ### By demand class (MASE, h=1)
 
@@ -149,9 +155,10 @@ the scale finite at μ = 0.
 
 The last row is not a failure: **46.9%** of demands are exactly zero, so the CDF has a large
 atom. If `q10` is also zero, then `P(y ≤ q10)` includes the whole atom; the meaningful lower-tail
-check is strict `<`. Coverage is slightly conservative at longer horizons (h=2: 0.788–0.870;
-h=4: 0.806–0.908) because the marginal conformal grid widens with horizon while the zero atom
-does not move. Figure `fig3_calibration.png` plots central-interval coverage curves.
+check is strict `<`. At h=1, coverage sits at or just below the 80% target (0.778–0.806); at
+longer horizons it becomes over-covered (h=2: 0.792–0.874; h=4: 0.798–0.914), because the marginal
+conformal grid widens with horizon while the zero atom does not move. Figure
+`fig3_calibration.png` plots central-interval coverage curves.
 
 ---
 
@@ -159,36 +166,39 @@ does not move. Figure `fig3_calibration.png` plots central-interval coverage cur
 
 Newsvendor order for a lead time `L`: `Q = F⁻¹(CR)` with `CR = Cu / (Cu + Co)`,
 `Co = 1% × unit price × L` per week held, `Cu = (Cu/Co) × Co`. Unit price is the median
-observed price per SKU, winsorised at p99.5. **These are assumptions, swept explicitly; the
-absolute cost level is not a claim about the company.** Two comparators are reported, because
-they answer different questions:
+observed price per SKU over weeks up to each forecast origin (no evaluation-window price
+information), winsorised at p99.5. **These are assumptions, swept explicitly; the absolute cost
+level is not a claim about the company.** Two comparators are reported, because they answer
+different questions:
 
 - **vs best simple point rule** — SES in every cell; this is what the 500-rep bootstrap over
   SKUs estimates, so it carries a CI.
-- **vs strongest point model overall** — LightGBM-Tweedie point, the cheapest point policy in
-  the central case. No CI is claimed for this difference; the bootstrap is defined against SES.
+- **vs cheapest point rule in each cell** — the lowest-cost point policy among all seven models.
+  That rule is LightGBM-Tweedie at the central case and LightGBM-median at `Cu/Co = 1`, so the
+  label does not name one model for the whole grid. No CI is claimed for this difference; the
+  bootstrap is defined against SES.
 
 ### Central case: L = 4 weeks, Cu/Co = 9 (critical ratio 0.90)
 
-| Policy | vs SES point | 95% CI | vs strongest point model | Fill rate | Avg inventory | Weeks of cover |
+| Policy | vs SES point | 95% CI | vs cheapest point rule | Fill rate | Avg inventory | Weeks of cover |
 |---|---:|---:|---:|---:|---:|---:|
-| **SES + conformal quantile** | **23.88%** | 21.91 – 26.67 | **18.53%** | 0.843 | 74.3 | 2.85 |
-| LightGBM Tweedie + conformal | 22.38% | 19.62 – 25.29 | 16.94% | 0.847 | 81.8 | 3.13 |
-| LightGBM median + conformal | 18.64% | 15.59 – 22.56 | 12.93% | 0.844 | 85.6 | 3.28 |
-| Poisson GLM + conformal | 10.23% | 9.41 – 15.39 | 3.93% | 0.805 | 76.5 | 2.93 |
-| LightGBM Tweedie point | 6.56% | 2.83 – 8.78 | 0.00% | 0.731 | 32.4 | 1.24 |
-| Croston/SBA + conformal | 3.06% | 0.71 – 8.76 | −3.75% | 0.799 | 93.4 | 3.58 |
-| Historical mean + conformal | −1.51% | −5.48 – 4.16 | −8.64% | 0.778 | 93.4 | 3.58 |
-| SES point (baseline) | 0.00% | — | −7.02% | 0.710 | 29.9 | 1.15 |
-| LightGBM median point | −38.94% | −44.28 – −35.22 | −48.70% | 0.547 | 8.0 | 0.31 |
-| Seasonal naive + conformal | −112.29% | −113.37 – −80.78 | −127.19% | 0.838 | 365.0 | 13.97 |
+| **SES + conformal quantile** | **23.82%** | 21.20 – 26.18 | **18.62%** | 0.846 | 76.6 | 2.93 |
+| LightGBM Tweedie + conformal | 22.31% | 19.10 – 25.29 | 17.01% | 0.850 | 84.2 | 3.22 |
+| LightGBM median + conformal | 17.58% | 13.88 – 20.99 | 11.95% | 0.854 | 93.5 | 3.58 |
+| Poisson GLM + conformal | 10.50% | 7.10 – 13.60 | 4.39% | 0.811 | 80.4 | 3.08 |
+| LightGBM Tweedie point | 6.39% | 3.41 – 9.38 | 0.00% | 0.731 | 32.4 | 1.24 |
+| Croston/SBA + conformal | 2.76% | −1.56 – 6.71 | −3.87% | 0.800 | 95.3 | 3.65 |
+| Historical mean + conformal | −1.88% | −7.03 – 2.92 | −8.84% | 0.780 | 95.8 | 3.67 |
+| SES point (baseline) | 0.00% | — | −6.82% | 0.710 | 29.9 | 1.15 |
+| LightGBM median point | −39.01% | −43.67 – −35.07 | −48.49% | 0.547 | 8.0 | 0.31 |
+| Seasonal naive + conformal | −129.84% | −151.48 – −111.72 | −145.53% | 0.845 | 408.0 | 15.62 |
 
-At the central case the quantile policy raises fill from **71.0%** (SES point) to **84.3%** and
-cuts stockouts, at the cost of more inventory. Holding cost is 64,177.60 and stockout cost
-93,426.39 of the SES-quantile total 157,603.99; under this cost ratio the stockout side still
-dominates. Against the strongest point model anywhere in the table — LightGBM Tweedie point — the
-SES quantile still saves **18.53%**. Note that ordering the **median** (LightGBM median point)
-has a fill rate of only **54.7%** and destroys value: a good MASE is not a good ordering rule.
+At the central case the quantile policy raises fill from **71.0%** (SES point) to **84.6%** and
+cuts stockouts, at the cost of more inventory. Holding cost is 66,435.28 and stockout cost
+92,918.61 of the SES-quantile total 159,353.89; under this cost ratio the stockout side still
+dominates. Against the cheapest point rule in the cell — LightGBM Tweedie point — the SES
+quantile still saves **18.62%**. Note that ordering the **median** (LightGBM median point) has a
+fill rate of only **54.7%** and destroys value: a good MASE is not a good ordering rule.
 
 ### Cost-ratio and lead-time sweep
 
@@ -196,24 +206,25 @@ Saving of the SES + conformal quantile policy, % versus SES point (95% CI in `re
 
 | Lead time | Cu/Co = 1 | 3 | 9 | 19 |
 |---|---:|---:|---:|---:|
-| 2 weeks | 4.22 | 2.19 | 21.63 | 39.25 |
-| 4 weeks | 3.71 | 2.60 | 23.88 | 43.00 |
-| 8 weeks | 1.65 | 4.74 | 28.40 | 47.80 |
+| 2 weeks | 4.23 | 2.14 | 21.61 | 39.31 |
+| 4 weeks | 3.83 | 2.37 | 23.82 | 43.12 |
+| 8 weeks | 1.67 | 5.12 | 29.66 | 48.81 |
 
 The value is driven by asymmetry for the SES policy: at `Cu/Co = 1` the critical ratio
-is 0.50 and an SES point forecast is already close to optimal (4.22% or less versus SES point).
-The LightGBM median is the exception in that corner (14.21% at L=4, ratio 1) but falls to 1.6% at
-ratio 3, so its gain is not a stable asymmetry result.
+is 0.50 and an SES point forecast is already close to optimal (4.23% or less versus SES point).
+The LightGBM median is the exception in that corner (13.38% at L=4, ratio 1) but its quantile
+rule falls to +0.54% at ratio 3, so its gain is not a stable asymmetry result.
 
-**Versus the strongest point model, the low-asymmetry case is not a win at all.** The SES quantile
-policy saves **−7.89%** (L=2), **−11.20%** (L=4) and **−1.81%** (L=8) at `Cu/Co = 1`, and
-**+0.13%**, **−1.41%**, **+1.40%** at ratio 3. The 23.9% headline is a high-asymmetry result, not a
-general one. `fig4_cost_vs_ratio.png` now shows both comparators: the top row is versus SES point
-with the bootstrap CI, the bottom row is versus the strongest point model as point estimates only.
+**Versus the cheapest point rule, the low-asymmetry case is not a win at all.** The SES quantile
+policy saves **−7.70%** (L=2), **−10.76%** (L=4) and **−1.54%** (L=8) at `Cu/Co = 1`, and
+**+0.18%**, **−1.47%**, **+1.82%** at ratio 3. The 23.82% headline is a high-asymmetry result, not
+a general one. `fig4_cost_vs_ratio.png` shows both comparators: the top row is versus SES point
+with the bootstrap CI, the bottom row is versus the cheapest point rule in each cell as point
+estimates only.
 
-Best cell per lead time (all at `Cu/Co = 19`, versus SES point / versus strongest point model):
-L=2 **39.25%** [36.74, 42.69] / **33.85%**, L=4 **43.00%** [40.86, 46.66] / **38.41%**, L=8
-**47.80%** [45.67, 50.71] / **45.90%**. Higher lead times need more cover, so a distribution matters
+Best cell per lead time (all at `Cu/Co = 19`, versus SES point / versus cheapest point rule):
+L=2 **39.31%** [36.35, 42.56] / **33.99%**, L=4 **43.12%** [39.89, 45.97] / **38.66%**, L=8
+**48.81%** [46.36, 51.18] / **46.96%**. Higher lead times need more cover, so a distribution matters
 more; they also carry more inventory and a larger absolute cost.
 
 ---
@@ -228,9 +239,9 @@ dominated by these weeks. The decision-side counterpart was **not** re-run: drop
 that contain a bulk week changes the evaluated SKU set and the cost base, so a like-for-like
 saving is not available without a separate study (documented in LIMITATIONS.md).
 
-**Worst SKUs.** The 20 worst SKUs by newsvendor cost (L=4, Cu/Co=9, LightGBM-median policy)
-are **16.85%** of total cost. The worst is `84879` (ASSORTED COLOUR BIRD ORNAMENT), 2,639.31
-cost units or **1.57%**, with 10,442 units of demand and an 8,007-unit order; its history is
+**Worst SKUs.** The 20 worst SKUs by newsvendor cost (L=4, Cu/Co=9, LightGBM-median quantile
+policy) are **16.15%** of total cost. The worst is `84879` (ASSORTED COLOUR BIRD ORNAMENT), 2,639.85
+cost units or **1.53%**, with 10,442 units of demand and an 8,223.81-unit order; its history is
 dominated by one extreme week. `fig7_worst_skus.png` plots all 20 histories; `outputs/tables/worst_skus.csv`
 has descriptions, class and price. The pattern is consistent: fast movers with one extreme
 week, not slow movers.
@@ -260,6 +271,15 @@ the cost of cold-start SKUs separately, which is a limitation.
 - **No promotions, price changes, competitor actions or weather.** Price is used only as a
   lagged feature and a cost proxy, not as a demand driver. The 22.8% of orders without a
   customer ID are not linked across time.
+- **The cost price is a proxy, and its basis matters little here.** The primary cost vector is
+  the median price observed before each origin. Costing the same central-case orders with the
+  full-sample median price moves the saving from 23.82% to 23.77% (vs SES) and from 18.62% to
+  18.41% (vs the cheapest point rule), so the no-look-ahead choice is not producing the result.
+  It is still an observed selling price, not a purchase cost.
+- **Conformal windows shrink with the horizon.** A cumulative `L`-week grid keeps only
+  calibration origins whose whole window is realised: 11 / 9 / 5 origins at L = 2 / 4 / 8,
+  against 12 at h=1. The L=8 tails therefore rest on five overlapping windows, and that is one
+  reason to treat the L=8 saving as the least stable in the grid.
 - **Short history and three origins.** 104 weeks, three rolling origins in adjacent 8-week
   blocks, one dataset. The bootstrap CI is over SKUs, not over time; it does not quantify
   temporal uncertainty or regime change. Results are not evidence of out-of-sample performance
@@ -302,8 +322,9 @@ Individual stages: `python src/download_data.py`, `clean.py`, `backtest.py`, `de
 
 **Quality gates:** rolling-origin only (no random split); all models evaluated on the same
 SKU-weeks; no future information in features (tested by perturbing every post-origin week);
-complete calendar spine; monotone quantiles; cost accounting identities; `results.json`
-contract; 7 figures; **13 tests**.
+complete calendar spine; monotone quantiles; cumulative conformal grids built only from complete
+L-week windows; cost vector priced from pre-origin data; compact 0…n−1 bootstrap index; cost
+accounting identities; `results.json` contract; 7 figures; **19 tests**.
 
 ---
 
@@ -360,8 +381,8 @@ class (`fig5`); service–inventory frontier (`fig6`); worst 20 SKUs (`fig7`).
 | Underage/overage ratios | 1, 3, 9, 19 | `config.COST_RATIOS` |
 | Lead times | 2, 4, 8 weeks | `config.LEAD_TIMES` |
 | Critical ratio | `Cu / (Cu + Co)` | `decision.py` |
-| Unit price | median observed per SKU, winsorised p99.5 | `decision.price_vector` |
-| Conformal window | 13 weeks, realised targets only | `config.CALIB_WEEKS` |
+| Unit price | median observed per SKU up to each origin, winsorised p99.5 | `decision.price_vector` |
+| Conformal window | 13 candidate weeks, realised targets only; complete L-week windows for cumulative grids | `config.CALIB_WEEKS`, `backtest.aggregate_grids` |
 | Calibration | Mondrian by demand class, `sqrt(mu + 0.25)` scale | `models.py` |
 | Model sample | ≥12 positive weeks before first origin | `clean.py` |
 | Evaluation | 26-week test window, 3 origins, h=1/2/4 accuracy | `config.py` |
@@ -378,22 +399,22 @@ See [DATA.md](DATA.md).
 
 Este proyecto pregunta si unos pronósticos probabilísticos bien calibrados reducen el coste de
 inventario frente a reglas de pedido puntuales. Sobre 3.186 SKU y tres orígenes móviles, la regla
-de pedir el cuantil 0,90 de un pronóstico SES reduce el coste total un **23,9%** frente a la mejor
+de pedir el cuantil 0,90 de un pronóstico SES reduce el coste total un **23,82%** frente a la mejor
 regla puntual simple (SES) en el caso central (L=4, Cu/Co=9), con un intervalo bootstrap del
-**21,9%–26,7%**; frente al mejor modelo puntual de toda la tabla (LightGBM-Tweedie) la reducción
-sigue siendo del **18,5%**. En el punto más asimétrico de la malla (L=8, Cu/Co=19) el ahorro es del
-**47,8%** frente a SES puntual y del **45,9%** frente al mejor puntual.
+**21,20%–26,18%**; frente a la regla puntual más barata de esa celda (LightGBM-Tweedie) la
+reducción sigue siendo del **18,62%**. En el punto más asimétrico de la malla (L=8, Cu/Co=19) el
+ahorro es del **48,81%** frente a SES puntual y del **46,96%** frente a la regla puntual más barata.
 
-El resultado no es general. Con Cu/Co=1 la política por cuantiles **pierde** frente al mejor
-modelo puntual en las tres duraciones (−7,9%, −11,2% y −1,8%) y con Cu/Co=3 está prácticamente
-empatada. El valor de la distribución aparece cuando el coste de quedarse corto domina al de
-almacenar, no antes.
+El resultado no es general. Con Cu/Co=1 la política por cuantiles **pierde** frente a la regla
+puntual más barata en las tres duraciones (−7,70%, −10,76% y −1,54%) y con Cu/Co=3 está
+prácticamente empatada. El valor de la distribución aparece cuando el coste de quedarse corto
+domina al de almacenar, no antes.
 
 La tensión central del proyecto es que precisión y valor de decisión no coinciden: LightGBM mediana
-tiene el mejor MASE por SKU (0,686) pero el peor WAPE agregado (40,1%) y destruye valor como regla
-de pedido, porque una mediana pide por debajo de la media por construcción. SES, el modelo más
-simple, gana la comparación de decisión. Los costes (1% del precio por semana en almacén, ratios
-1/3/9/19) y los plazos (2/4/8 semanas) son supuestos barridos, no datos de la empresa; no hay
-información de roturas de stock, por lo que la demanda está censurada. Es un prototipo analítico
-reproducible, no una política desplegada.
+tiene el mejor MASE por SKU (0,686) pero el segundo peor WAPE agregado (40,1%; solo la naive
+estacional es peor) y destruye valor como regla de pedido, porque una mediana pide por debajo de la
+media por construcción. SES, el modelo más simple, gana la comparación de decisión. Los costes (1%
+del precio por semana en almacén, ratios 1/3/9/19) y los plazos (2/4/8 semanas) son supuestos
+barridos, no datos de la empresa; no hay información de roturas de stock, por lo que la demanda
+está censurada. Es un prototipo analítico reproducible, no una política desplegada.
 
