@@ -3,11 +3,11 @@
   "meta": {
     "project": "03_online_retail_forecasting",
     "title": "Forecasting sparse demand: probabilistic SKU forecasts and the cost of getting inventory wrong",
-    "generated_utc": "2026-10-25T15:00:11+00:00",
+    "generated_utc": "2026-10-25T15:04:21+00:00",
     "command": "python src/run_all.py",
-    "git_commit": "44fa66198b5f2ea0acfa35b45471175577263cd2",
-    "git_dirty": true,
-    "git_state": "working tree on top of 44fa66198b5f2ea0acfa35b45471175577263cd2",
+    "git_commit": "62f99255d4897ba9ba6d66f752f86bff3600e870",
+    "git_dirty": false,
+    "git_state": "clean tree at 62f99255d4897ba9ba6d66f752f86bff3600e870",
     "seed": 20261024,
     "versions": {
       "python": "3.11.9",
@@ -24,12 +24,12 @@
     },
     "stage_seconds": {
       "download": 0.2,
-      "clean": 6.2,
-      "backtest": 73.3,
-      "decision": 3.9,
+      "clean": 6.3,
+      "backtest": 72.2,
+      "decision": 3.8,
       "figures": 9.6
     },
-    "total_seconds": 93.3
+    "total_seconds": 92.1
   },
   "data": {
     "raw_rows_two_sheets": 1067371,
@@ -203,7 +203,7 @@
         "fit_end_week": "2011-02-28",
         "n_train_rows": 535248,
         "n_calib_rows": 216648,
-        "seconds": 20.2
+        "seconds": 19.7
       },
       {
         "origin": 85,
@@ -212,7 +212,7 @@
         "fit_end_week": "2011-04-25",
         "n_train_rows": 637200,
         "n_calib_rows": 216648,
-        "seconds": 19.2
+        "seconds": 19.3
       },
       {
         "origin": 93,
@@ -221,7 +221,7 @@
         "fit_end_week": "2011-06-20",
         "n_train_rows": 739152,
         "n_calib_rows": 216648,
-        "seconds": 23.3
+        "seconds": 22.6
       }
     ],
     "origins_weeks": [
@@ -237,7 +237,7 @@
     ],
     "n_obs_per_horizon": 9558,
     "n_skus": 3186,
-    "seconds": 72.7,
+    "seconds": 71.6,
     "bulk_sensitivity": {
       "excluded_obs_share_h1": 0.0134,
       "excluded_demand_share_h1": 0.1486,
@@ -341,7 +341,7 @@
         }
       }
     },
-    "as_of": "2026-10-25T15:59:57"
+    "as_of": "2026-10-25T16:04:07"
   },
   "origins": [
     {
@@ -351,7 +351,7 @@
       "fit_end_week": "2011-02-28",
       "n_train_rows": 535248,
       "n_calib_rows": 216648,
-      "seconds": 20.2
+      "seconds": 19.7
     },
     {
       "origin": 85,
@@ -360,7 +360,7 @@
       "fit_end_week": "2011-04-25",
       "n_train_rows": 637200,
       "n_calib_rows": 216648,
-      "seconds": 19.2
+      "seconds": 19.3
     },
     {
       "origin": 93,
@@ -369,7 +369,7 @@
       "fit_end_week": "2011-06-20",
       "n_train_rows": 739152,
       "n_calib_rows": 216648,
-      "seconds": 23.3
+      "seconds": 22.6
     }
   ],
   "accuracy": [

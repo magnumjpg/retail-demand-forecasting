@@ -1,4 +1,4 @@
 $ C:\Users\jaime\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\python.exe -m pytest -q tests
 
 ........................                                                 [100%]
-24 passed in 2.00s
+24 passed in 2.03s
