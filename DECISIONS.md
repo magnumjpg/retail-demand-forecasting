@@ -549,8 +549,10 @@ Windows); separate scripts with no assembly (docs drift from artefacts); committ
 results file (violates the traceability gate).
 
 **Consequence.** The docs quote fields of `results.json`, not numbers typed from a console. A
-failed test makes the build exit non-zero. `--from-cache` is for iteration; the release run must
-use the default so the audit is rebuilt from the verified workbook.
+failed test makes the build exit non-zero. `--from-cache` is for iteration; the release run uses
+the default so the audit is rebuilt from the verified workbook. `meta.git_commit` is `HEAD` at
+run time: it names the code that produced the artefacts, which is necessarily one commit before
+the commit that contains the regenerated `results.json`.
 
 ---
 

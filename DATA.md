@@ -88,12 +88,14 @@ from a zero.
 | `price_mean` | revenue / demand, NaN in zero weeks |
 | `n_pos_weeks` | positive weeks in the full sample (constant per SKU) |
 | `total_demand`, `total_revenue` | full-sample totals (constant per SKU) |
-| `median_price` | median weekly unit price in positive weeks, used as cost proxy |
+| `median_price` | full-sample median weekly unit price in positive weeks |
 | `description` | modal non-blank description |
 
 Unit price is *derived* (`revenue / demand`) and is used only as a lagged feature and as the
-newsvendor cost proxy, never as a target. It is winsorised at the 99.5th percentile before the
-decision analysis.
+newsvendor cost proxy, never as a target. The decision cost vector recomputes the median from
+weeks **up to each forecast origin** (`decision.price_vector`), so it contains no evaluation-window
+price information; the full-sample `median_price` is the feature fallback and the price-basis
+sensitivity. Both are winsorised at the 99.5th percentile before use.
 
 ## 4. Sample construction
 
