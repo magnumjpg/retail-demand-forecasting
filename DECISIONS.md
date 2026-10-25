@@ -186,8 +186,9 @@ bias); Theta/ETS (not in the charter, and a larger baseline family would need it
 
 **Consequence.** SES is deliberately a small grid, not an MLE fit; the configuration is stated so
 the comparison is reproducible. Croston/SBA is worse than the historical mean on this data
-(MASE 1.569 vs 1.319), which is a legitimate finding about a retailer without a stable
-inter-arrival rate, not a bug.
+(MASE 1.692 vs 1.319), which is a legitimate finding about a retailer without a stable
+inter-arrival rate, not a bug. The first sale resets the interval clock, so leading zero weeks
+cannot inflate the first smoothed interval (regression-tested).
 
 ---
 
@@ -364,9 +365,11 @@ ratio 9) is a reporting convention, not an estimate of the retailer's true costs
 
 **Decision.** For each L and cost ratio, compare every model/policy with the **best point rule
 among the four simple baselines** (mean, seasonal naive, SES, Croston/SBA) on the same realised
-demand. Report the saving and a 500-rep bootstrap CI over SKUs. In all 168 model × policy × L ×
-ratio cells the best baseline is **SES point**. The oracle orders realised demand and has zero cost
-by construction; it is reported as a bound, not a policy.
+demand. Report the saving and a 500-rep bootstrap CI over SKUs. There are 168 model-policy-L-ratio
+rows but only **12 independent L × ratio cells** (7 models × 2 policies = 14 rows per cell); the
+best baseline is **SES point** in all 168 rows, and the best quantile policy beats it in all 12
+cells (`headline.decision.baseline_comparison`). The oracle orders realised demand and has zero
+cost by construction; it is reported as a bound, not a policy.
 
 **Alternatives.** A fixed baseline (e.g. historical mean) — makes the result depend on an arbitrary
 weak comparator; the company's actual policy — not in the data; the best *probabilistic* baseline —
@@ -382,6 +385,11 @@ Tweedie point, and the SES quantile saves **18.62%** against it
 (`headline.decision.central_case_quantile.savings_vs_best_point_all_pct`). The identity of that
 rule changes with the cell — LightGBM median at `Cu/Co = 1`, LightGBM Tweedie above it — which is
 why the docs call it "the cheapest point rule in the cell", not "the strongest model".
+
+The 23.82% headline is itself the best of the seven quantile models in the central cell, selected
+after seeing the table (`headline.decision.headline_selection.selected_ex_post = true`). Across the
+12 cells the best quantile model saves 2.43–48.81% (median 17.50%), so the central value is not a
+pre-registered point estimate; the bootstrap CI is conditional on the selected cell.
 
 ---
 
@@ -404,7 +412,10 @@ tail); no CI (hides sampling uncertainty).
 **Consequence.** The CI describes cross-sectional heterogeneity only. It does not cover temporal
 uncertainty, model specification, or cost assumptions; those are addressed by the sweep (costs) or
 left as limitations (time/model). A CI that excludes zero is not evidence of future savings
-(LIMITATIONS §3.3).
+(LIMITATIONS §3.3). A separate, higher-resolution bootstrap (10,000 SKU resamples, drawn in
+chunks of 1,000) gives a one-sided paired test of H0: savings ≤ 0 at the selected central cell:
+*p* < 0.0001, with no replicate reaching zero (3,186 SKUs; `p_value_at_resolution: true`,
+bound 1/10,001). It is a cost-bootstrap test, not a Diebold–Mariano test on forecast errors.
 
 ---
 
@@ -424,7 +435,7 @@ absolute threshold (not comparable across SKUs); winsorise instead of exclude (c
 not just the evaluation).
 
 **Consequence.** The accuracy ranking is unchanged under trimming (median 0.474, SES 0.624,
-Tweedie 0.773, GLM 1.023, mean 1.113, Croston 1.368, seasonal naive 1.535). The decision magnitude
+Tweedie 0.773, GLM 1.023, mean 1.113, Croston 1.493, seasonal naive 1.535). The decision magnitude
 is not proven robust to trimming; that is an explicit limitation, not a hidden result. A
 decision-side rerun is the first item of next work.
 
@@ -444,7 +455,7 @@ sale); a <52-week split (almost everyone is cold at the first origin); no split 
 explicitly forbids hiding them).
 
 **Consequence.** Cold-start SKUs are reported separately, not averaged away. LightGBM median is
-strongest there (MASE 0.558) and Croston is worst (3.193); SES is essentially unchanged from the
+strongest there (MASE 0.558) and Croston is worst (3.689); SES is essentially unchanged from the
 warm group (0.818 vs 0.819). The decision cost of cold-start SKUs is **not** measured separately;
 that is a limitation.
 
@@ -500,7 +511,7 @@ hidden. Figures are descriptive, not inferential.
 **Context.** A test suite that hard-codes today's MASE would fail on every legitimate model change
 and would not catch the failures that matter (leakage, broken spine, bad accounting).
 
-**Decision.** 19 tests:
+**Decision.** 24 tests:
 1. no negative demand and a plausible zero share;
 2. complete 104-week calendar spine, one row per SKU-week;
 3. cleaning audit reconciles row by row;
@@ -519,7 +530,14 @@ and would not catch the failures that matter (leakage, broken spine, bad account
 16. `price_vector(origin)` is unchanged when every post-origin week is perturbed;
 17. the headline numbers match `decision.csv` and `results.json` (central and best cells);
 18. the price-basis sensitivity is stored and does not reverse the central result;
-19. coverage is below target at h=1 and above it at h=4, as reported.
+19. coverage is below target at h=1 and above it at h=4, as reported;
+20. Croston/SBA ignores leading zero weeks in the first interval and matches the same sales
+    without those zeros;
+21. an all-zero Croston series returns the mean fallback;
+22. the SKU-set quality gate detects a model that misses a SKU in one origin × horizon cell;
+23. the headline selection block is traceable to the 12-cell grid (168 rows, paired-test fields);
+24. the focal p-value uses ≥10,000 resamples and is consistent with its resolution flag, and the
+    chunked test bootstrap matches a one-shot count of replicates.
 
 **Alternatives.** A golden-master regression on every number (brittle, and would freeze bugs); no
 tests (fails the charter); only smoke tests (would not catch leakage).
@@ -541,8 +559,9 @@ pipeline-generated.
 stage artefacts and runs the tests. Flags: `--from-cache` (reuse the transaction parquet),
 `--force-download` (ignore the cached zip and fetch it again), `--skip-tests`. The default is a
 full clean from the workbook. The file records `meta.versions`, `meta.stage_seconds`,
-`meta.git_commit` (when git is available), the data audit, accuracy, calibration, cold start,
-decision rows, headline fields, figure inventory and quality checks.
+`meta.git_commit`, `meta.git_dirty` and a human-readable `meta.git_state` (when git is available),
+the data audit, accuracy, calibration, cold start, decision rows, headline fields, figure inventory
+and quality checks.
 
 **Alternatives.** A notebook (not one command, hidden state); a Makefile (less portable on
 Windows); separate scripts with no assembly (docs drift from artefacts); committing a hand-written
@@ -551,8 +570,10 @@ results file (violates the traceability gate).
 **Consequence.** The docs quote fields of `results.json`, not numbers typed from a console. A
 failed test makes the build exit non-zero. `--from-cache` is for iteration; the release run uses
 the default so the audit is rebuilt from the verified workbook. `meta.git_commit` is `HEAD` at
-run time: it names the code that produced the artefacts, which is necessarily one commit before
-the commit that contains the regenerated `results.json`.
+run time and `meta.git_dirty` says whether the working tree had uncommitted changes. When it did,
+`meta.git_state` reads `working tree on top of <hash>`: the artefacts were produced by code that
+is not fully contained in `git_commit`, and the field says so instead of implying otherwise. A
+release run should be made from a clean tree, where `git_state` reads `clean tree at <hash>`.
 
 ---
 
@@ -614,10 +635,12 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
   point rule is LightGBM median. The row is labelled "vs cheapest point rule in each cell".
 
 **Open.**
-- `meta.git_commit` is `null` in runs made before the repository is initialised. The release run
-  records the commit once git exists.
+- `meta.git_commit` is `null` and `meta.git_state` says "not a git checkout" in runs made before
+  the repository is initialised. The release run records the commit once git exists, and should be
+  made from a clean tree so `meta.git_dirty` is false.
 - The decision side is not trimmed for bulk orders; documented, not fixed.
-- No CRPS and no paired forecast test; documented.
+- No CRPS; the paired test is a SKU bootstrap on newsvendor costs at the selected cell, not a
+  Diebold–Mariano test on forecast errors.
 - The repository is Windows-tested only; `requirements.txt` pins versions but not the OS/BLAS.
 
 ---

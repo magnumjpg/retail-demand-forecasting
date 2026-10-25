@@ -61,12 +61,16 @@ times 2/4/8; ratios 1/3/9/19), and `L=4, Cu/Co=9` is the middle of the grid, not
 best cell. The best cell is `L=8, Cu/Co=19`, and it is reported as such.
 
 But the choice to *foreground* the central case is a presentation judgement, and
-the ratio-9 cell happens to be favourable. The honest defence is that the full grid
-is shown, including the cells where the policy loses. A reader who wants the
+the ratio-9 cell happens to be favourable. Worse, **23.82% is the best of the seven
+quantile models inside that cell**, chosen after seeing the table. `results.json`
+now says so explicitly (`headline_selection.selected_ex_post = true`) and reports
+the 12-cell range: 2.43–48.81%, median 17.50%. The honest defence is that the full
+grid is shown, including the cells where the policy loses. A reader who wants the
 unfavourable corner can see it in the same table.
 
 **Unresolved:** no pre-registration. The charter fixed the question, not a single
-primary specification.
+primary specification. The 95% CI is conditional on the selected cell and does not
+cover model or cell selection.
 
 ---
 

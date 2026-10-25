@@ -6,6 +6,7 @@ data/raw/*
 
 # ------------------------------------------------------ intermediate caches
 # Rebuilt by `python src/run_all.py`; not deliverables, and large.
+data/processed/weekly_demand.csv
 data/processed/transactions_raw.parquet
 data/processed/forecasts.parquet
 data/processed/residual_quantiles.csv

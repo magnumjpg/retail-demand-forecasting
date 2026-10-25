@@ -85,8 +85,8 @@ made here.
 
 Price appears only as a lagged feature and a cost proxy. There are no promotion flags, no
 competitor prices, no marketing calendar, no weather, and no holiday indicator beyond month and
-week-of-year. **22.77%** of raw orders have no customer ID, and customer identity is not used at
-all.
+week-of-year. **22.77%** of raw line items (**16.32%** of invoices) have no customer ID, and
+customer identity is not used at all.
 
 **Consequence.** The models estimate an average seasonal/autoregressive pattern, not a causal
 response. A promotion week looks like a demand spike and is treated as such; the forecast cannot
@@ -251,11 +251,16 @@ iteration.
 ### 3.2 The savings baseline is chosen on the evaluation cells
 
 Savings are measured against the **best simple point rule** among historical mean, seasonal naive,
-SES and Croston/SBA, at the same `L` and ratio. In all **168** model × policy × L × ratio cells that
-baseline is SES point. Choosing the best baseline on the same cells makes the comparison
-conservative for the probabilistic policy (the baseline is as strong as it can be), but it also
-uses evaluation information to select the baseline. The baseline is not a pre-registered incumbent
-policy.
+SES and Croston/SBA, at the same `L` and ratio. There are **168** model-policy-L-ratio rows but
+only **12** independent lead-time × cost-ratio cells; the baseline is SES point in all 168 rows.
+Choosing the best baseline on the same cells makes the comparison conservative for the
+probabilistic policy (the baseline is as strong as it can be), but it also uses evaluation
+information to select the baseline. The baseline is not a pre-registered incumbent policy.
+
+The reported model is also selected ex post: **23.82%** is the best of the seven quantile models
+inside the central cell, not a pre-registered specification. Across the 12 cells the best quantile
+model saves **2.43–48.81%** (median **17.50%**). Both the baseline identity and the headline model
+are choices made after seeing the same evaluation table.
 
 **Consequence.** "23.82% versus the best simple point rule (SES)" is not "23.82% versus the
 company's current policy". A real incumbent could be better or worse. A stronger post-hoc
@@ -276,8 +281,9 @@ resampled this SKU population, how stable is the mean saving?" It does **not** a
 is the saving across time, cost assumptions or model specifications?"
 
 **Consequence.** The intervals are narrower than a full uncertainty statement. Cost assumptions are
-swept rather than bootstrapped, and the model is fixed. A CI that excludes zero is not evidence
-that the policy will save money in a new year.
+swept rather than bootstrapped, and the model is fixed. The focal paired test uses 10,000 SKU
+resamples (*p* < 0.0001) but inherits the same cross-sectional limitation. A CI that excludes zero
+is not evidence that the policy will save money in a new year.
 
 **What would fix it.** A block bootstrap over origins/time, a Bayesian or bootstrap distribution
 over costs, and model averaging.
@@ -332,11 +338,12 @@ and out-of-sample service monitoring.
 - **Runtime.** A full clean + backtest + decision + figures run takes roughly two minutes on the
   development machine. That is short enough for a portfolio, but it is not a production
   retraining pipeline.
-- **Tests are invariants, not a numerical golden master.** The 19 tests check the calendar spine,
+- **Tests are invariants, not a numerical golden master.** The 24 tests check the calendar spine,
   the audit identity, leakage by perturbing every post-origin week, monotone quantiles, accounting
   identities, the `results.json` contract, complete cumulative conformal windows, the compact
-  bootstrap index, a pre-origin price vector, the release headline numbers and the presence of
-  docs/figures. They do **not** assert every metric, so a genuine model change can move the
+  bootstrap index, a pre-origin price vector, the Croston interval fix, the realised SKU-set
+  quality gate, the traceability of the ex-post headline selection, the release headline numbers
+  and the presence of docs/figures. They do **not** assert every metric, so a genuine model change can move the
   accuracy table without failing the suite. The README numbers are checked against `results.json`
   by hand at release.
 - **Figures use test-window information for display.** `fig2` selects representative fast/medium/

@@ -27,6 +27,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import config as C
+from models import MODELS
 
 SRC = Path(__file__).resolve().parent
 ROOT = SRC.parent
@@ -71,13 +72,17 @@ def versions() -> dict:
     return out
 
 
-def git_commit() -> str | None:
+def git_provenance() -> tuple[str | None, bool | None]:
+    """Return (HEAD hash, working-tree dirty flag); (None, None) outside git."""
     try:
-        r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
-                           capture_output=True, text=True)
-        return r.stdout.strip() or None
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
+                              capture_output=True, text=True).stdout.strip() or None
+        status = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
+                                check=True, capture_output=True,
+                                text=True).stdout
+        return head, bool(status.strip())
     except Exception:
-        return None
+        return None, None
 
 
 def _f(x) -> float:
@@ -93,6 +98,40 @@ def _native(v):
     if isinstance(v, np.floating):
         return float(v)
     return v
+
+
+def same_sku_set_check(fc: pd.DataFrame, models=MODELS) -> dict:
+    """For each (origin, horizon), the SKUs with a non-null prediction must be
+    the same set for every model.
+
+    The old check compared ``n_obs`` within (horizon, model) groups of the
+    accuracy table, where each group is a single row; it could never fail. This
+    compares the realised SKU sets in ``forecasts.parquet``.
+    """
+    cells, sizes, mismatches = 0, set(), []
+    for (origin, horizon), g in fc.groupby(["origin", "horizon"], sort=True):
+        sets = {}
+        for model in models:
+            col = f"mu__{model}"
+            sets[model] = set(g.loc[g[col].notna(), "StockCode"])
+        cells += 1
+        sizes.add(len(sets[models[0]]))
+        reference = sets[models[0]]
+        bad = [m for m in models[1:] if sets[m] != reference]
+        if bad:
+            mismatches.append({
+                "origin": int(origin), "horizon": int(horizon),
+                "models_with_different_sku_set": bad,
+                "n_sku_reference": len(reference),
+                "n_sku_missing": {m: len(reference - sets[m]) for m in bad},
+            })
+    return {
+        "same_sku_set_all_models": not mismatches,
+        "n_cells_checked": cells,
+        "n_skus": int(next(iter(sizes))) if len(sizes) == 1 else None,
+        "n_skus_by_cell": sorted(int(s) for s in sizes),
+        "mismatches": mismatches,
+    }
 
 
 def build_headline(acc: pd.DataFrame, agg: pd.DataFrame, cal: pd.DataFrame,
@@ -139,6 +178,39 @@ def build_headline(acc: pd.DataFrame, agg: pd.DataFrame, cal: pd.DataFrame,
                                 "ci_low_pct", "ci_high_pct", "fill_rate",
                                 "avg_inventory_units", "weeks_of_cover",
                                 "best_baseline")})
+
+    # The headline model is selected ex post inside one cell. Record the grid
+    # that the selection was made from, so the claim is traceable.
+    per_cell = []
+    for (L, ratio), g in q.groupby(["lead_time", "cost_ratio"], sort=True):
+        r = g.loc[g["savings_vs_best_simple_point_pct"].idxmax()]
+        per_cell.append({
+            "lead_time": int(L), "cost_ratio": _f(ratio),
+            "model": r["model"],
+            "savings_vs_best_simple_point_pct":
+                _f(r["savings_vs_best_simple_point_pct"]),
+        })
+    cell_savings = np.array([c["savings_vs_best_simple_point_pct"]
+                             for c in per_cell])
+    headline_selection = {
+        "selected_ex_post": True,
+        "selection_rule": ("best quantile-policy model inside the pre-specified "
+                           "central cell (L=4, Cu/Co=9); the best-cell maximum "
+                           "across the 12-cell grid is reported separately"),
+        "selected_cell": {"lead_time": int(central["lead_time"]),
+                          "cost_ratio": _f(central["cost_ratio"]),
+                          "model": central["model"]},
+        "n_cells": int(len(per_cell)),
+        "n_cells_positive_savings": int((cell_savings > 0).sum()),
+        "savings_pct_across_cells": {
+            "min": float(cell_savings.min()),
+            "median": float(np.median(cell_savings)),
+            "max": float(cell_savings.max()),
+        },
+        "per_cell_best_quantile": per_cell,
+        "note": ("the CI is conditional on the selected cell; it does not "
+                 "cover the selection over models or cells"),
+    }
 
     point_central = dec[(dec["policy"] == "point") & (dec["lead_time"] == 4)
                         & (dec["cost_ratio"] == 9)].copy()
@@ -194,9 +266,21 @@ def build_headline(acc: pd.DataFrame, agg: pd.DataFrame, cal: pd.DataFrame,
             "best_quantile_per_lead_time": per_l,
             "central_case_point_rules": [slim(r, dec_cols)
                                          for _, r in point_central.iterrows()],
-            "best_baseline_counts": {
-                str(k): int(v) for k, v in
-                dec["best_baseline"].value_counts().items()},
+            "headline_selection": headline_selection,
+            "baseline_comparison": {
+                "best_baseline_counts": {
+                    str(k): int(v) for k, v in
+                    dec["best_baseline"].value_counts().items()},
+                "n_model_policy_lead_ratio_rows": int(
+                    (dec["model"] != "oracle").sum()),
+                "n_independent_cells": int(len(per_cell)),
+                "cells_better": int((cell_savings > 0).sum()),
+                "rows_with_positive_quantile_savings": int(
+                    (q["savings_vs_best_simple_point_pct"] > 0).sum()),
+                "definition": ("independent cells are lead time x cost ratio "
+                               "(3 x 4); each cell contains 7 models x 2 "
+                               "policies = 14 rows"),
+            },
         },
     }
 
@@ -224,6 +308,16 @@ def assemble(stage_seconds: dict) -> dict:
     artifacts = {str(p.relative_to(ROOT)).replace("\\", "/"): p.stat().st_size
                  for p in artifact_paths if p.exists()}
 
+    sku_set = same_sku_set_check(fc)
+
+    commit, dirty = git_provenance()
+    if commit is None:
+        git_state = "not a git checkout"
+    elif dirty:
+        git_state = f"working tree on top of {commit}"
+    else:
+        git_state = f"clean tree at {commit}"
+
     results = {
         "schema_version": 1,
         "meta": {
@@ -231,7 +325,9 @@ def assemble(stage_seconds: dict) -> dict:
             "title": "Forecasting sparse demand: probabilistic SKU forecasts and the cost of getting inventory wrong",
             "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "command": "python src/run_all.py",
-            "git_commit": git_commit(),
+            "git_commit": commit,
+            "git_dirty": dirty,
+            "git_state": git_state,
             "seed": C.SEED,
             "versions": versions(),
             "stage_seconds": {k: round(v, 1) for k, v in stage_seconds.items()},
@@ -250,6 +346,7 @@ def assemble(stage_seconds: dict) -> dict:
             "assumptions": dc["assumptions"],
             "n_sku_decisions_per_cell": dc["n_sku_decisions_per_cell"],
             "oracle_cost": dc["oracle_cost"],
+            "paired_test_central": dc.get("paired_test_central"),
             "cost_share_top20_skus_pct": dc["cost_share_top20_skus_pct"],
             "rows": records(C.OUT_TABLES / "decision.csv"),
             "worst_skus_top20": records(C.OUT_TABLES / "worst_skus.csv"),
@@ -261,8 +358,7 @@ def assemble(stage_seconds: dict) -> dict:
             "origins_count": len(origins),
             "models": sorted(acc["model"].unique().tolist()),
             "horizons_evaluated": sorted(int(h) for h in acc["horizon"].unique()),
-            "same_obs_all_models": bool(
-                (acc.groupby(["horizon", "model"])["n_obs"].nunique() == 1).all()),
+            **sku_set,
             "tests": {"status": "not_run"},
         },
     }
@@ -279,7 +375,7 @@ def write_results(results: dict) -> None:
 # ---------------------------------------------------------------------- tests
 def run_tests() -> dict:
     print("\n=== tests ===", flush=True)
-    cmd = [sys.executable, "-m", "pytest", "-q", "tests/test_pipeline.py"]
+    cmd = [sys.executable, "-m", "pytest", "-q", "tests"]
     t0 = time.time()
     r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
@@ -292,7 +388,7 @@ def run_tests() -> dict:
     status = "passed" if r.returncode == 0 else "failed"
     return {
         "status": status,
-        "command": "python -m pytest -q tests/test_pipeline.py",
+        "command": "python -m pytest -q tests",
         "n_passed": int(m.group(1)) if m else 0,
         "n_failed": int(failed.group(1)) if failed else 0,
         "seconds": round(time.time() - t0, 1),

@@ -3,6 +3,17 @@
 **Probabilistic SKU-week forecasts and the cost of getting inventory wrong**  
 UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins
 
+**At a glance.** *Question:* do calibrated probabilistic SKU forecasts reduce inventory cost
+relative to point forecasts? *Data:* 972,068 cleaned UCI Online Retail II line items, aggregated
+to 3,995 SKUs × 104 ISO weeks. *Sample:* 3,186 SKUs with ≥12 positive pre-origin weeks, three
+rolling origins, 26-week test window. *Method:* seven point models plus a shared Mondrian
+conformal layer, evaluated in a 3 lead-time × 4 cost-ratio newsvendor grid. *Headline:* at the
+central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95%
+bootstrap CI **21.20–26.18%**, conditional on that cell). *Caveat:* the reported model is
+selected ex post inside the central cell (a reporting convention, not the best cell); the best
+quantile model per cell ranges from **2.43%** to **48.81%**, and at `Cu/Co=1` the SES quantile
+rule loses to the cheapest point rule.
+
 This is a decision memo, not a leaderboard entry. It asks whether calibrated probabilistic
 forecasts reduce inventory cost under a newsvendor policy, and where the approach breaks.
 Every number below is a field of [`outputs/results.json`](outputs/results.json); the file is
@@ -15,8 +26,12 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 1. **Probabilistic ordering is worth real money at high cost ratios, and the SES policy's value is
    concentrated there.** At a 4-week lead time and `Cu/Co = 9` (critical ratio 0.90), ordering at
    the 90th percentile of an SES forecast cuts total cost by **23.82%** versus the best simple
-   point rule (SES; 95% bootstrap CI over SKUs: **21.20% to 26.18%**), and by **18.62%** versus the
-   cheapest point rule in that cell (LightGBM-Tweedie point). At the most asymmetric grid point
+   point rule (SES; 95% bootstrap CI over SKUs: **21.20% to 26.18%**, one-sided paired bootstrap
+   *p* < **0.0001** from 10,000 resamples for H0: savings ≤ 0), and by **18.62%** versus the
+   cheapest point rule in that cell (LightGBM-Tweedie point). **This is an ex-post selection:** SES
+   is the best of the seven quantile models inside this cell, and the CI is conditional on that
+   choice. Across the 12 lead-time × cost-ratio cells the best quantile model ranges from
+   **2.43%** to **48.81%** (median **17.50%**) and is positive in all 12. At the most asymmetric grid point
    (`L = 8`, `Cu/Co = 19`) the saving is **48.81%** versus SES point (CI **46.36% to 51.18%**) and
    **46.96%** versus the cheapest point rule. For SES, at `Cu/Co = 1` the gain over SES point
    is **4.23%** or less (L=2: 4.23%, L=4: 3.83%, L=8: 1.67%) and at ratio 3 it is at most **5.12%**.
@@ -30,8 +45,9 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 2. **The simplest calibrated model wins the decision, not the most complex one.**
    At the central case, SES + conformal quantiles saves **23.82%** versus SES point and **18.62%**
    versus the cheapest point rule; LightGBM-Tweedie + conformal saves **22.31%** and **17.01%**;
-   LightGBM-median + conformal **17.58%** and **11.95%**. The best simple point baseline is SES in
-   **168 of 168** model × policy × lead-time × cost-ratio cells.
+   LightGBM-median + conformal **17.58%** and **11.95%**. The quantile policy beats the best simple
+   point forecast (SES in every row) in all **12** lead-time × cost-ratio cells, over **168**
+   model-policy-lead-ratio rows.
 
 3. **Accuracy and decision value are not the same thing.**
    LightGBM median has the best per-SKU MASE at h=1 (**0.686**, versus SES **0.819** and
@@ -51,7 +67,7 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 5. **What fails is predictable.** Seasonal naive loses badly (MASE **1.723**; −129.8% decision
    value at the central case). The first fit window is 65 weeks (to 2011-02-28): one seasonal
    cycle, not two, and the two Decembers differ sharply, so a single lag-52 rule is fragile.
-   Croston/SBA is worse than the historical mean on this data (**1.569** vs **1.319**). SKUs
+   Croston/SBA is worse than the historical mean on this data (**1.692** vs **1.319**). SKUs
    with a bulk-order week account for most of the worst-cost list: the top 20 SKUs are **16.15%**
    of total newsvendor cost.
 
@@ -96,7 +112,7 @@ near-zero denominator otherwise explodes MASE.
 | LightGBM Tweedie | 20.810 | 76.998 | 0.961 | 9.656 | 0.778 | 28.07 |
 | Poisson GLM | 19.736 | 77.796 | 1.219 | 9.207 | 0.801 | 20.09 |
 | Historical mean | 25.720 | 79.473 | 1.319 | 11.250 | 0.806 | 29.03 |
-| Croston/SBA | 25.727 | 86.714 | 1.569 | 11.759 | 0.800 | 29.13 |
+| Croston/SBA | 25.934 | 86.762 | 1.692 | 11.746 | 0.798 | 29.87 |
 | Seasonal naive | 44.467 | 220.920 | 1.723 | 21.250 | 0.782 | 44.57 |
 
 Actual mean demand is **27.16** units/SKU-week. The two median-style models (LightGBM median
@@ -109,8 +125,8 @@ distribution; the aggregate and decision metrics expose the cost of that bias.
 | Model | Pooled WAPE |
 |---|---:|
 | Historical mean | **6.91%** |
-| Croston/SBA | 7.25% |
 | SES | 7.58% |
+| Croston/SBA | 9.99% |
 | Poisson GLM | 26.01% |
 | LightGBM Tweedie | 27.10% |
 | LightGBM median | 40.05% |
@@ -126,15 +142,15 @@ in [LIMITATIONS.md](LIMITATIONS.md).
 | Class | SES | LGBM Tweedie | LGBM median | Croston/SBA |
 |---|---:|---:|---:|---:|
 | fast | 0.621 | 0.695 | **0.565** | 0.671 |
-| medium | 0.759 | 0.877 | **0.685** | 0.930 |
+| medium | 0.759 | 0.877 | **0.685** | 0.931 |
 | slow | 0.692 | 0.808 | **0.551** | 0.874 |
-| intermittent | 0.978 | 1.173 | **0.786** | 2.382 |
+| intermittent | 0.978 | 1.173 | **0.786** | 2.628 |
 
 LightGBM median wins every class. LightGBM Tweedie loses to SES in every class. Croston/SBA is
 the worst model in the intermittent class — the case it is designed for — which is a legitimate
 finding, not a bug: SBA smooths towards a stable inter-arrival rate that this retailer does not
 have. Cold-start SKUs (12–25 positive weeks at the first origin, **880** SKUs) are shown
-separately: LightGBM median **0.558** vs SES **0.818** vs Croston **3.193**; SES is essentially
+separately: LightGBM median **0.558** vs SES **0.818** vs Croston **3.689**; SES is essentially
 unchanged from the warm group (**0.819**).
 
 ---
@@ -187,7 +203,7 @@ different questions:
 | LightGBM median + conformal | 17.58% | 13.88 – 20.99 | 11.95% | 0.854 | 93.5 | 3.58 |
 | Poisson GLM + conformal | 10.50% | 7.10 – 13.60 | 4.39% | 0.811 | 80.4 | 3.08 |
 | LightGBM Tweedie point | 6.39% | 3.41 – 9.38 | 0.00% | 0.731 | 32.4 | 1.24 |
-| Croston/SBA + conformal | 2.76% | −1.56 – 6.71 | −3.87% | 0.800 | 95.3 | 3.65 |
+| Croston/SBA + conformal | 4.36% | 0.23 – 8.31 | −2.17% | 0.801 | 92.8 | 3.55 |
 | Historical mean + conformal | −1.88% | −7.03 – 2.92 | −8.84% | 0.780 | 95.8 | 3.67 |
 | SES point (baseline) | 0.00% | — | −6.82% | 0.710 | 29.9 | 1.15 |
 | LightGBM median point | −39.01% | −43.67 – −35.07 | −48.49% | 0.547 | 8.0 | 0.31 |
@@ -233,8 +249,8 @@ more; they also carry more inventory and a larger absolute cost.
 
 **Bulk orders.** Evaluation weeks above each SKU's training p99.5 account for **14.86%** of
 evaluated units while removing only **1.34%** of rows. Excluding them
-improves every model's MASE (SES 0.819 → 0.624; LightGBM median 0.686 → 0.474; Croston 1.569 →
-1.368) and leaves the ranking unchanged. Absolute MAE/RMSE and the worst-SKU list are still
+improves every model's MASE (SES 0.819 → 0.624; LightGBM median 0.686 → 0.474; Croston 1.692 →
+1.493) and leaves the ranking unchanged. Absolute MAE/RMSE and the worst-SKU list are still
 dominated by these weeks. The decision-side counterpart was **not** re-run: dropping decisions
 that contain a bulk week changes the evaluated SKU set and the cost base, so a like-for-like
 saving is not available without a separate study (documented in LIMITATIONS.md).
@@ -269,8 +285,8 @@ the cost of cold-start SKUs separately, which is a limitation.
   censored; fill rate is measured against recorded sales. A true lost-sales model needs stock
   levels we do not have.
 - **No promotions, price changes, competitor actions or weather.** Price is used only as a
-  lagged feature and a cost proxy, not as a demand driver. The 22.8% of orders without a
-  customer ID are not linked across time.
+  lagged feature and a cost proxy, not as a demand driver. The 22.8% of line items (16.3% of
+  invoices) without a customer ID are not linked across time.
 - **The cost price is a proxy, and its basis matters little here.** The primary cost vector is
   the median price observed before each origin. Costing the same central-case orders with the
   full-sample median price moves the saving from 23.82% to 23.77% (vs SES) and from 18.62% to
@@ -299,6 +315,39 @@ the cost of cold-start SKUs separately, which is a limitation.
 
 ---
 
+## Literature and positioning
+
+The project sits between intermittent-demand forecasting and inventory theory. These are the
+works that inform the design; it does not claim to extend them.
+
+- **Croston (1972), "Forecasting and Stock Control for Intermittent Demands", *Operational
+  Research Quarterly* 23(3).** The original size/interval decomposition that `croston_sba`
+  implements; our result is that it does not help on this retailer's demand.
+- **Syntetos & Boylan (2005), "The Accuracy of Intermittent Demand Estimates",
+  *International Journal of Forecasting* 21(2).** Motivates the Syntetos–Boylan bias correction
+  `(1 − α/2)` and the use of intermittent-demand baselines rather than a straw man.
+- **Hyndman, Koehler, Snyder & Grose (2002), "A State Space Framework for Automatic Forecasting
+  Using Exponential Smoothing Methods", *International Journal of Forecasting* 18(3).**
+  Underpins the SES/ETS family and the MASE scale used to compare point forecasts across SKUs.
+- **Makridakis, Spiliotis & Assimakopoulos (2020), "The M4 Competition: 100,000 Time Series and
+  61 Forecasting Methods", *International Journal of Forecasting* 36(1).** The benchmark showing
+  that simple statistical methods remain hard to beat; consistent with SES winning the decision
+  comparison here.
+- **Ke et al. (2017), "LightGBM: A Highly Efficient Gradient Boosting Decision Tree", NeurIPS.**
+  The implementation behind the Tweedie-mean and quantile-0.5 point models; included to test
+  whether a stronger point model improves the ordering decision (it does not).
+- **Romano, Patterson & Candès (2019), "Conformalized Quantile Regression", NeurIPS.** The
+  conformal framing that lets one uncertainty layer be applied to every model; this project uses
+  split conformal with a variance-stabilising scale rather than CQR itself.
+- **Petropoulos et al. (2022), "Forecasting: Theory and Practice", *International Journal of
+  Forecasting* 38(3).** A scope reference for what a forecasting study should report and which
+  uncertainties (model, temporal, cost) a backtest does not cover.
+- **Silver, Pyke & Thomas (2016), *Inventory and Production Management in Supply Chains*
+  (4th ed., CRC Press).** The single-period newsvendor logic and the critical-ratio rule used in
+  the decision layer.
+
+---
+
 ## 8. Reproduce
 
 ```powershell
@@ -316,6 +365,10 @@ python src/run_all.py --skip-tests
 python -m pytest -q tests/test_pipeline.py  # tests alone
 ```
 
+A manual GitHub Actions workflow (`.github/workflows/full-pipeline.yml`, `workflow_dispatch` only)
+downloads the UCI archive, rebuilds every cache and runs the full suite; the light `ci.yml` on
+push/PR runs the cache-free subset of the tests.
+
 Individual stages: `python src/download_data.py`, `clean.py`, `backtest.py`, `decision.py`,
 `figures.py`. The full run is deterministic given the seed (`20261024`); LightGBM is fitted with
 `deterministic=True`.
@@ -324,7 +377,8 @@ Individual stages: `python src/download_data.py`, `clean.py`, `backtest.py`, `de
 SKU-weeks; no future information in features (tested by perturbing every post-origin week);
 complete calendar spine; monotone quantiles; cumulative conformal grids built only from complete
 L-week windows; cost vector priced from pre-origin data; compact 0…n−1 bootstrap index; cost
-accounting identities; `results.json` contract; 7 figures; **19 tests**.
+accounting identities; `results.json` contract; 7 figures; the realised SKU set is compared
+across models in all 24 origin × horizon cells (3,186 SKUs per cell); **24 tests**.
 
 ---
 
@@ -404,6 +458,9 @@ regla puntual simple (SES) en el caso central (L=4, Cu/Co=9), con un intervalo b
 **21,20%–26,18%**; frente a la regla puntual más barata de esa celda (LightGBM-Tweedie) la
 reducción sigue siendo del **18,62%**. En el punto más asimétrico de la malla (L=8, Cu/Co=19) el
 ahorro es del **48,81%** frente a SES puntual y del **46,96%** frente a la regla puntual más barata.
+El 23,82% es el mejor de los siete modelos de cuantiles dentro de la celda central, elegido ex post;
+entre las 12 celdas el mejor modelo de cuantiles ahorra entre **2,43%** y **48,81%** (mediana
+**17,50%**), y el intervalo es condicional a la celda elegida.
 
 El resultado no es general. Con Cu/Co=1 la política por cuantiles **pierde** frente a la regla
 puntual más barata en las tres duraciones (−7,70%, −10,76% y −1,54%) y con Cu/Co=3 está

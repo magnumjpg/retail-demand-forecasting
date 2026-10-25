@@ -80,6 +80,7 @@ def croston_sba(hist: np.ndarray, alpha: float = 0.1) -> np.ndarray:
         first = sale & ~started
         z[first] = y[first]
         p[first] = 1.0
+        q[first] = 0.0          # discard leading zero weeks before the first sale
         started |= first
         upd = sale & started & ~first
         if upd.any():

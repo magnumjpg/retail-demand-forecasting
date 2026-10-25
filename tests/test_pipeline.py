@@ -27,13 +27,22 @@ sys.path.insert(0, str(ROOT / "src"))
 import config as C  # noqa: E402
 from decision import bootstrap_savings, price_vector  # noqa: E402
 from features import FEATURES, load_panel  # noqa: E402
+from models import croston_sba  # noqa: E402
+from run_all import same_sku_set_check  # noqa: E402
 
 _PANEL = None
+
+
+def _need(*paths):
+    missing = [str(p) for p in paths if not Path(p).exists()]
+    if missing:
+        pytest.skip("generated cache missing: " + ", ".join(missing))
 
 
 def panel():
     global _PANEL
     if _PANEL is None:
+        _need(C.WEEKLY)
         _PANEL = load_panel()
     return _PANEL
 
@@ -44,6 +53,7 @@ def _panel():
 
 # --------------------------------------------------------------- the demand
 def test_no_negative_demand():
+    _need(C.WEEKLY)
     d = pd.read_csv(C.WEEKLY, dtype={"StockCode": str}, parse_dates=["week"])
     assert d["demand"].notna().all(), "missing demand"
     assert (d["demand"] >= 0).all(), "negative demand in the panel"
@@ -52,6 +62,7 @@ def test_no_negative_demand():
 
 
 def test_calendar_spine_is_complete():
+    _need(C.WEEKLY)
     d = pd.read_csv(C.WEEKLY, dtype={"StockCode": str}, parse_dates=["week"])
     weeks = pd.DatetimeIndex(sorted(d["week"].unique()))
     assert len(weeks) == 104, f"expected 104 complete weeks, got {len(weeks)}"
@@ -65,6 +76,7 @@ def test_calendar_spine_is_complete():
 
 
 def test_cleaning_audit_adds_up():
+    _need(C.DATA_PROC / "clean_stats.json")
     stats = json.loads((C.DATA_PROC / "clean_stats.json").read_text(encoding="utf-8"))
     rows = stats["raw_rows_two_sheets"]
     for step in stats["audit"]:
@@ -78,11 +90,35 @@ def test_cleaning_audit_adds_up():
 
 def test_model_selection_is_frozen_before_the_first_origin():
     p = _panel()
+    _need(C.DATA_PROC / "sku_selection.json")
     sel = json.loads((C.DATA_PROC / "sku_selection.json").read_text(encoding="utf-8"))
     assert int(sel["window_weeks"][1]) == p.origin0 - 1
     assert len(sel["skus"]) == len(p.model_skus) > 0
     pos = (p.D[:, : p.origin0] > 0).sum(axis=1)
     assert set(p.skus[pos >= C.MIN_POS_WEEKS_MODEL]) == set(p.model_skus)
+
+
+# ---------------------------------------------------------------- Croston
+def test_croston_ignores_leading_zero_weeks_in_the_interval():
+    """The first sale starts the interval clock; leading zeros must not count.
+
+    Sales at weeks 3 and 6 are three weeks apart.  After the first sale
+    ``p = 1``; at the next sale ``p = 1 + 0.1 * (3 - 1) = 1.2`` and the SBA
+    forecast is ``0.95 * 5 / 1.2``.  With the pre-fix code the update used a
+    gap of 6 (three leading zeros plus the three real weeks), so ``p = 1.5``
+    and the forecast was ``0.95 * 5 / 1.5``.
+    """
+    leading = croston_sba(np.array([[0, 0, 0, 5, 0, 0, 5]], dtype=float), alpha=0.1)
+    no_leading = croston_sba(np.array([[5, 0, 0, 5]], dtype=float), alpha=0.1)
+    assert abs(leading[0] - 0.95 * 5 / 1.2) < 1e-9
+    assert abs(leading[0] - no_leading[0]) < 1e-9
+
+
+def test_croston_all_zero_series_returns_the_mean_fallback():
+    hist = np.zeros((3, 12), dtype=float)
+    out = croston_sba(hist, alpha=0.1)
+    assert np.array_equal(out, hist.mean(axis=1))
+    assert np.isfinite(out).all()
 
 
 # ------------------------------------------------------------- no leakage
@@ -128,6 +164,7 @@ def test_training_targets_stay_inside_the_fit_window():
 
 # ------------------------------------------------------------- forecasts
 def test_quantiles_are_monotone_and_non_negative():
+    _need(C.FORECASTS)
     fc = pd.read_parquet(C.FORECASTS)
     models = ["mean", "seasonal_naive", "ses", "croston_sba", "glm_poisson",
               "lgbm_tweedie", "lgbm_quantile"]
@@ -143,6 +180,7 @@ def test_quantiles_are_monotone_and_non_negative():
 
 
 def test_calibration_is_in_the_right_ballpark():
+    _need(C.OUT_TABLES / "accuracy.csv", C.FORECASTS)
     acc = pd.read_csv(C.OUT_TABLES / "accuracy.csv")
     h1 = acc[acc["horizon"] == 1]
     assert h1["coverage80"].between(0.72, 0.88).all(), h1[["model", "coverage80"]]
@@ -157,6 +195,7 @@ def test_calibration_is_in_the_right_ballpark():
 
 # -------------------------------------------------------------- decisions
 def test_newsvendor_accounting_identities():
+    _need(C.OUT_TABLES / "decision.csv")
     dec = pd.read_csv(C.OUT_TABLES / "decision.csv")
     assert len(dec) == 3 * 4 * 7 * 2 + 3, "unexpected decision table shape"
     real = dec[dec["model"] != "oracle"]
@@ -173,6 +212,7 @@ def test_newsvendor_accounting_identities():
 
 
 def test_decision_sweep_covers_the_charter_grid():
+    _need(C.OUT_TABLES / "decision.csv")
     dec = pd.read_csv(C.OUT_TABLES / "decision.csv")
     assert set(dec["lead_time"].dropna().astype(int)) == set(C.LEAD_TIMES)
     assert set(dec["cost_ratio"].dropna()) == set(C.COST_RATIOS)
@@ -187,6 +227,7 @@ def test_aggregate_conformal_grids_use_complete_windows():
     If a late calibration origin were summed over fewer than L weeks, the aggregate
     n would be larger; that was the pre-audit bug.
     """
+    _need(C.RESIDUALS)
     g = pd.read_csv(C.RESIDUALS)
     keys = ["horizon", "origin", "model", "demand_class"]
     agg = g[g["kind"] == "aggregate"][keys + ["n"]].drop_duplicates()
@@ -215,6 +256,20 @@ def test_bootstrap_requires_a_compact_sku_index():
     global_codes = np.repeat(np.arange(100, 100 + n), 3)
     with pytest.raises(AssertionError):
         bootstrap_savings(cost_model, cost_base, global_codes, idx)
+
+
+def test_high_resolution_pvalue_respects_chunking():
+    """The chunked test bootstrap must equal a one-shot count of replicates."""
+    from decision import bootstrap_savings_pvalue_highres
+    rng = np.random.default_rng(0)
+    n = 50
+    codes = np.repeat(np.arange(n), 2)
+    base = np.full(len(codes), 10.0)
+    model = np.full(len(codes), 8.0)  # a 20% saving for every SKU
+    p, n_le = bootstrap_savings_pvalue_highres(
+        model, base, codes, rng, n_boot=300, chunk=64)
+    assert n_le == 0
+    assert p == pytest.approx(1 / 301)
 
 
 def test_price_vector_ignores_post_origin_weeks():
@@ -246,6 +301,7 @@ def test_price_vector_ignores_post_origin_weeks():
 
 
 def test_headline_decision_numbers_match_the_table():
+    _need(C.RESULTS, C.OUT_TABLES / "decision.csv")
     res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
     dec = pd.read_csv(C.OUT_TABLES / "decision.csv")
     central = res["headline"]["decision"]["central_case_quantile"]
@@ -265,6 +321,7 @@ def test_headline_decision_numbers_match_the_table():
 
 
 def test_price_basis_sensitivity_is_stored_and_small():
+    _need(C.RESULTS)
     res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
     s = res["decision"]["assumptions"]["price_basis_sensitivity"]
     assert s["lead_time"] == 4 and s["cost_ratio"] == 9
@@ -277,6 +334,7 @@ def test_price_basis_sensitivity_is_stored_and_small():
 
 
 def test_coverage_moves_from_under_to_over_with_horizon():
+    _need(C.OUT_TABLES / "accuracy.csv")
     acc = pd.read_csv(C.OUT_TABLES / "accuracy.csv")
     h1 = acc[acc["horizon"] == 1]["coverage80"]
     h4 = acc[acc["horizon"] == 4]["coverage80"]
@@ -287,16 +345,76 @@ def test_coverage_moves_from_under_to_over_with_horizon():
 
 
 # ---------------------------------------------------------------- results
+def test_quality_gate_detects_a_model_missing_a_sku():
+    models = ["base", "other"]
+    rows = []
+    for origin, horizon in ((0, 1), (0, 2)):
+        for code in ("A", "B"):
+            row = {"origin": origin, "horizon": horizon, "StockCode": code}
+            row.update({f"mu__{m}": 1.0 for m in models})
+            rows.append(row)
+    fc = pd.DataFrame(rows)
+    good = same_sku_set_check(fc, models)
+    assert good["same_sku_set_all_models"] is True
+    assert good["n_cells_checked"] == 2
+    assert good["n_skus"] == 2
+    assert good["mismatches"] == []
+    # one model fails to produce a prediction for SKU B in one cell
+    fc.loc[(fc["origin"] == 0) & (fc["horizon"] == 1)
+           & (fc["StockCode"] == "B"), "mu__other"] = np.nan
+    bad = same_sku_set_check(fc, models)
+    assert bad["same_sku_set_all_models"] is False
+    assert len(bad["mismatches"]) == 1
+    assert bad["mismatches"][0]["horizon"] == 1
+    assert bad["mismatches"][0]["models_with_different_sku_set"] == ["other"]
+    assert bad["mismatches"][0]["n_sku_missing"]["other"] == 1
+
+
+def test_headline_selection_is_traceable_to_the_grid():
+    _need(C.RESULTS, C.OUT_TABLES / "decision.csv")
+    res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
+    dec = pd.read_csv(C.OUT_TABLES / "decision.csv")
+    hs = res["headline"]["decision"]["headline_selection"]
+    bc = res["headline"]["decision"]["baseline_comparison"]
+    real = dec[dec["model"] != "oracle"]
+    q = real[real["policy"] == "quantile"]
+    assert hs["selected_ex_post"] is True
+    assert hs["n_cells"] == real.groupby(["lead_time", "cost_ratio"]).ngroups
+    assert bc["n_model_policy_lead_ratio_rows"] == len(real) == 168
+    assert bc["n_independent_cells"] == hs["n_cells"]
+    per_cell = q.groupby(["lead_time", "cost_ratio"])[
+        "savings_vs_best_simple_point_pct"].max()
+    assert bc["cells_better"] == int((per_cell > 0).sum())
+    assert hs["n_cells_positive_savings"] == int((per_cell > 0).sum())
+    assert abs(hs["savings_pct_across_cells"]["min"] - per_cell.min()) < 1e-9
+    assert abs(hs["savings_pct_across_cells"]["max"] - per_cell.max()) < 1e-9
+    pt = res["decision"]["paired_test_central"]
+    assert pt["lead_time"] == 4 and pt["cost_ratio"] == 9
+    assert pt["n_sku_resamples"] >= 10_000
+    assert pt["ci_resamples"] == C.N_BOOTSTRAP
+    assert 0.0 < pt["p_value_one_sided"] <= 1.0
+    assert pt["p_value_at_resolution"] is (pt["n_replicates_le_zero"] == 0)
+    if pt["p_value_at_resolution"]:
+        bound = 1 / (pt["n_sku_resamples"] + 1)
+        assert pt["p_value_one_sided"] == pytest.approx(bound, abs=1e-8)
+        assert pt["p_value_upper_bound"] == pytest.approx(bound, abs=1e-8)
+    assert pt["ci_low_pct"] <= pt["observed_savings_pct"] <= pt["ci_high_pct"]
+
+
 def test_results_json_has_the_contract_keys():
-    assert C.RESULTS.exists(), "run src/run_all.py first"
+    _need(C.RESULTS)
     res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
     for key in ("schema_version", "meta", "data", "backtest", "origins",
                 "accuracy", "accuracy_by_class", "aggregate_error",
                 "calibration", "cold_start", "decision", "headline",
                 "figures", "quality"):
         assert key in res, f"results.json missing {key!r}"
+    assert set(("git_commit", "git_dirty", "git_state")) <= set(res["meta"])
     assert len(res["figures"]) >= 5
-    assert res["quality"]["same_obs_all_models"] is True
+    assert res["quality"]["same_sku_set_all_models"] is True
+    assert res["quality"]["n_cells_checked"] > 0
+    assert res["quality"]["n_skus"] == res["data"]["n_model_skus"]
+    assert res["quality"]["mismatches"] == []
     assert set(res["quality"]["models"]) == {
         "mean", "seasonal_naive", "ses", "croston_sba", "glm_poisson",
         "lgbm_tweedie", "lgbm_quantile"}
@@ -305,6 +423,7 @@ def test_results_json_has_the_contract_keys():
 
 
 def test_headline_is_consistent_with_the_tables():
+    _need(C.RESULTS)
     res = json.loads(C.RESULTS.read_text(encoding="utf-8"))
     h1 = [r for r in res["accuracy"] if r["horizon"] == 1]
     best = min(h1, key=lambda r: r["mase"])
@@ -326,6 +445,8 @@ def test_docs_and_figures_are_present():
     assert "What this does not prove" in readme
     assert "results.json" in readme
     figs = sorted(C.OUT_FIGURES.glob("*.png"))
+    if not figs:
+        pytest.skip("figures are generated by the pipeline and are absent")
     assert len(figs) >= 5
     assert min(f.stat().st_size for f in figs) > 5_000, "empty figure"
 

@@ -59,7 +59,8 @@ Notes:
 - **Duplicate rows.** The two yearly sheets overlap 2010-12-01 → 2010-12-09; 34,335 identical
   rows are removed before any aggregation.
 - **Missing identifiers** are counted after de-duplication; none remain. In the raw file,
-  customer ID is missing for 22.77% of orders, but customer ID is not used as a feature.
+  customer ID is missing for **22.77% of line items** and **16.32% of invoices**
+  (8,752 of 53,628), but customer ID is not used as a feature.
 
 ## 3. Weekly panel
 
@@ -74,7 +75,8 @@ exactly 104 rows and every missing week is an explicit zero. This is the hard pa
 intermittent-demand modelling: `NaN` is not “no demand”, it is “no row”, and both are different
 from a zero.
 
-`data/processed/weekly_demand.csv` is 43.1 MB; 415,480 rows = 3,995 SKUs × 104 weeks.
+`data/processed/weekly_demand.csv` is 43.1 MB; 415,480 rows = 3,995 SKUs × 104 weeks. It is a
+generated cache and is **not committed**: a fresh clone must run the pipeline (see §8).
 
 | Column | Meaning |
 |---|---|
@@ -160,8 +162,13 @@ Three rolling origins, all inside the last 26-week test window (weeks 78–103):
 | Top 1% of invoices' share of revenue | 14.22% |
 | Largest invoice | 87,167 units |
 | Top 1% share including cancellations | 26.01% |
-| Orders without customer ID (raw) | 22.77% |
+| Line items without customer ID (raw) | 22.77% (243,007 of 1,067,371) |
+| Invoices without customer ID (raw) | 16.32% (8,752 of 53,628) |
 | Invoices in clean data | 38,459 |
+
+`results.json` also carries `share_orders_without_customer_id` as a deprecated alias: it has always
+been the line-item share, not the invoice share. Use `share_invoices_without_customer_id` for the
+invoice figure.
 
 The largest invoice is a bulk order, not a data error. It is why MASE, MAE and RMSE tell
 different stories, and why the bulk sensitivity in `_backtest.json` matters. No stockout or
@@ -183,9 +190,9 @@ inventory level is recorded, so a zero cannot be distinguished from “no stock 
    If the same invoice line were legitimately repeated on the same day with identical fields, it
    would be removed too; given the identical timestamps and descriptions, duplication is the
    overwhelmingly likely explanation.
-6. **No customer linkage.** 22.77% of raw orders have no customer ID; customer-level features are
-   not used, so this does not bias the model sample, but it limits any claim about customer
-   behaviour.
+6. **No customer linkage.** 22.77% of raw line items (16.32% of invoices) have no customer ID;
+   customer-level features are not used, so this does not bias the model sample, but it limits
+   any claim about customer behaviour.
 7. **Prices are not constant.** `median_price` is a SKU-level proxy, winsorised at p99.5. Cost
    results scale with it; they are not accounting profit.
 
@@ -197,5 +204,7 @@ python src/clean.py --force          # re-read the workbook, rebuild the panel +
 python src/clean.py                  # reuse data/processed/transactions_raw.parquet
 ```
 
-The intermediate `transactions_raw.parquet` (7.3 MB) is a local cache, git-ignored. The audited
-panel, stats and frozen SKU selection are the deliverables.
+The intermediate `transactions_raw.parquet` (7.3 MB) and the 43.1 MB `weekly_demand.csv` are
+local caches and are git-ignored. The audited stats and frozen SKU selection are committed
+deliverables. **A fresh clone must run the full pipeline** (`python src/run_all.py`) because the
+processed caches are not committed; `--from-cache` only works after that first build.

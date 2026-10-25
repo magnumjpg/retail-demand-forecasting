@@ -53,7 +53,15 @@
     "largest_invoice_units": 87167.0,
     "top_1pct_invoice_share_units_incl_cancellations": 0.2601
   },
+  "share_line_items_without_customer_id": 0.2277,
   "share_orders_without_customer_id": 0.2277,
+  "share_invoices_without_customer_id": 0.1632,
+  "customer_id_coverage": {
+    "line_items_total": 1067371,
+    "line_items_without_customer_id": 243007,
+    "invoices_total": 53628,
+    "invoices_without_customer_id": 8752
+  },
   "audit": [
     {
       "step": "duplicate_rows_sheet_overlap",

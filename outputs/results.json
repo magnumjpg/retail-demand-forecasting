@@ -3,9 +3,11 @@
   "meta": {
     "project": "03_online_retail_forecasting",
     "title": "Forecasting sparse demand: probabilistic SKU forecasts and the cost of getting inventory wrong",
-    "generated_utc": "2026-10-25T11:25:46+00:00",
+    "generated_utc": "2026-10-25T14:55:47+00:00",
     "command": "python src/run_all.py",
-    "git_commit": "ae2d86d4baf7c6fafebebd625a98c55c4ffdb0c1",
+    "git_commit": "4c592cc59e0277ca191d118be46bee4d90ae83d8",
+    "git_dirty": true,
+    "git_state": "working tree on top of 4c592cc59e0277ca191d118be46bee4d90ae83d8",
     "seed": 20261024,
     "versions": {
       "python": "3.11.9",
@@ -21,13 +23,13 @@
       "pytest": "8.4.2"
     },
     "stage_seconds": {
-      "download": 0.4,
-      "clean": 75.6,
-      "backtest": 95.6,
-      "decision": 4.9,
-      "figures": 12.9
+      "download": 0.2,
+      "clean": 6.7,
+      "backtest": 76.6,
+      "decision": 4.0,
+      "figures": 10.0
     },
-    "total_seconds": 189.4
+    "total_seconds": 97.5
   },
   "data": {
     "raw_rows_two_sheets": 1067371,
@@ -84,7 +86,15 @@
       "largest_invoice_units": 87167.0,
       "top_1pct_invoice_share_units_incl_cancellations": 0.2601
     },
+    "share_line_items_without_customer_id": 0.2277,
     "share_orders_without_customer_id": 0.2277,
+    "share_invoices_without_customer_id": 0.1632,
+    "customer_id_coverage": {
+      "line_items_total": 1067371,
+      "line_items_without_customer_id": 243007,
+      "invoices_total": 53628,
+      "invoices_without_customer_id": 8752
+    },
     "audit": [
       {
         "step": "duplicate_rows_sheet_overlap",
@@ -193,7 +203,7 @@
         "fit_end_week": "2011-02-28",
         "n_train_rows": 535248,
         "n_calib_rows": 216648,
-        "seconds": 27.3
+        "seconds": 21.2
       },
       {
         "origin": 85,
@@ -202,7 +212,7 @@
         "fit_end_week": "2011-04-25",
         "n_train_rows": 637200,
         "n_calib_rows": 216648,
-        "seconds": 24.8
+        "seconds": 20.2
       },
       {
         "origin": 93,
@@ -211,7 +221,7 @@
         "fit_end_week": "2011-06-20",
         "n_train_rows": 739152,
         "n_calib_rows": 216648,
-        "seconds": 30.4
+        "seconds": 24.2
       }
     ],
     "origins_weeks": [
@@ -227,7 +237,7 @@
     ],
     "n_obs_per_horizon": 9558,
     "n_skus": 3186,
-    "seconds": 94.8,
+    "seconds": 76.0,
     "bulk_sensitivity": {
       "excluded_obs_share_h1": 0.0134,
       "excluded_demand_share_h1": 0.1486,
@@ -246,8 +256,8 @@
           "mase_all_weeks": 0.8188
         },
         "croston_sba": {
-          "mase": 1.3676,
-          "mase_all_weeks": 1.5686
+          "mase": 1.4932,
+          "mase_all_weeks": 1.692
         },
         "glm_poisson": {
           "mase": 1.0231,
@@ -284,7 +294,7 @@
           },
           "croston_sba": {
             "n_obs": 2298,
-            "mase": 3.1926
+            "mase": 3.6892
           },
           "glm_poisson": {
             "n_obs": 2298,
@@ -314,7 +324,7 @@
           },
           "croston_sba": {
             "n_obs": 7258,
-            "mase": 1.0544
+            "mase": 1.0596
           },
           "glm_poisson": {
             "n_obs": 7258,
@@ -331,7 +341,7 @@
         }
       }
     },
-    "as_of": "2026-10-25T12:25:27"
+    "as_of": "2026-10-25T15:55:32"
   },
   "origins": [
     {
@@ -341,7 +351,7 @@
       "fit_end_week": "2011-02-28",
       "n_train_rows": 535248,
       "n_calib_rows": 216648,
-      "seconds": 27.3
+      "seconds": 21.2
     },
     {
       "origin": 85,
@@ -350,7 +360,7 @@
       "fit_end_week": "2011-04-25",
       "n_train_rows": 637200,
       "n_calib_rows": 216648,
-      "seconds": 24.8
+      "seconds": 20.2
     },
     {
       "origin": 93,
@@ -359,7 +369,7 @@
       "fit_end_week": "2011-06-20",
       "n_train_rows": 739152,
       "n_calib_rows": 216648,
-      "seconds": 30.4
+      "seconds": 24.2
     }
   ],
   "accuracy": [
@@ -529,54 +539,54 @@
       "horizon": 1,
       "model": "croston_sba",
       "n_obs": 9558,
-      "mae": 25.727054788,
-      "rmse": 86.7136339313,
-      "mase": 1.5686002267,
-      "mase_p50": 1.1837399375,
+      "mae": 25.9340768221,
+      "rmse": 86.7622033259,
+      "mase": 1.6919588034,
+      "mase_p50": 1.2614958622,
       "n_mase_excluded": 2,
-      "mae_p50": 23.517432439,
-      "bias": 1.969985442,
-      "pinball_p10": 5.3423721134,
-      "pinball_p50": 11.7587162195,
-      "pinball_p90": 10.0257835637,
-      "coverage80": 0.8003766478,
-      "mean_pred": 29.1262942932,
+      "mae_p50": 23.4919016685,
+      "bias": 2.7122524881,
+      "pinball_p10": 5.3389377541,
+      "pinball_p50": 11.7459508342,
+      "pinball_p90": 9.915181269,
+      "coverage80": 0.7982841599,
+      "mean_pred": 29.8685613393,
       "mean_actual": 27.1563088512
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "n_obs": 9558,
-      "mae": 27.8016249278,
-      "rmse": 89.1125083444,
-      "mase": 1.5191799799,
-      "mase_p50": 1.038232969,
+      "mae": 27.9680159098,
+      "rmse": 88.9516601749,
+      "mase": 1.6429888191,
+      "mase_p50": 1.0986310957,
       "n_mase_excluded": 2,
-      "mae_p50": 24.9800143019,
-      "bias": 0.6027538036,
-      "pinball_p10": 4.7041945503,
-      "pinball_p50": 12.4900071509,
-      "pinball_p90": 10.9639407729,
-      "coverage80": 0.8691148776,
-      "mean_pred": 29.1262942932,
+      "mae_p50": 24.8530910934,
+      "bias": 1.3450208497,
+      "pinball_p10": 4.6827341542,
+      "pinball_p50": 12.4265455467,
+      "pinball_p90": 10.8280640147,
+      "coverage80": 0.8672316384,
+      "mean_pred": 29.8685613393,
       "mean_actual": 28.5235404896
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "n_obs": 9558,
-      "mae": 25.7070911913,
-      "rmse": 77.2030868192,
-      "mase": 1.5583802828,
-      "mase_p50": 1.0317190584,
+      "mae": 26.0734715227,
+      "rmse": 77.3826045002,
+      "mase": 1.6851249402,
+      "mase_p50": 1.0787360231,
       "n_mase_excluded": 2,
-      "mae_p50": 22.3193086934,
-      "bias": 4.0468843748,
-      "pinball_p10": 3.9159751087,
-      "pinball_p50": 11.1596543467,
-      "pinball_p90": 9.2213246064,
-      "coverage80": 0.909395271,
-      "mean_pred": 29.1262942932,
+      "mae_p50": 22.2553863896,
+      "bias": 4.7891514209,
+      "pinball_p10": 3.8888322423,
+      "pinball_p50": 11.1276931948,
+      "pinball_p90": 9.1621600339,
+      "coverage80": 0.9014438167,
+      "mean_pred": 29.8685613393,
       "mean_actual": 25.0794099184
     },
     {
@@ -1216,12 +1226,12 @@
       "model": "croston_sba",
       "demand_class": "fast",
       "n_obs": 3054,
-      "mae": 40.1770299929,
-      "mase": 0.6705691273,
-      "mae_p50": 38.3274242844,
-      "pinball_p50": 19.1637121422,
-      "coverage80": 0.8127046496,
-      "mean_pred": 56.8183151363,
+      "mae": 40.2047939064,
+      "mase": 0.6708547646,
+      "mae_p50": 38.3354111324,
+      "pinball_p50": 19.1677055662,
+      "coverage80": 0.8130320891,
+      "mean_pred": 56.8896379034,
       "mean_actual": 59.1604453176
     },
     {
@@ -1229,12 +1239,12 @@
       "model": "croston_sba",
       "demand_class": "medium",
       "n_obs": 936,
-      "mae": 15.7099761848,
-      "mase": 0.9303862152,
-      "mae_p50": 13.6843199261,
-      "pinball_p50": 6.8421599631,
+      "mae": 15.7248543672,
+      "mase": 0.9310749924,
+      "mae_p50": 13.6847582621,
+      "pinball_p50": 6.8423791311,
       "coverage80": 0.8012820513,
-      "mean_pred": 12.7331270944,
+      "mean_pred": 12.7611574361,
       "mean_actual": 12.3258547009
     },
     {
@@ -1242,12 +1252,12 @@
       "model": "croston_sba",
       "demand_class": "slow",
       "n_obs": 786,
-      "mae": 11.5147886848,
-      "mase": 0.8736620903,
-      "mae_p50": 9.3500742491,
-      "pinball_p50": 4.6750371245,
+      "mae": 11.5201877372,
+      "mase": 0.8739505326,
+      "mae_p50": 9.3478672855,
+      "pinball_p50": 4.6739336427,
       "coverage80": 0.7913486005,
-      "mean_pred": 10.1925753509,
+      "mean_pred": 10.2227127248,
       "mean_actual": 7.1666666667
     },
     {
@@ -1255,12 +1265,12 @@
       "model": "croston_sba",
       "demand_class": "intermittent",
       "n_obs": 4782,
-      "mae": 20.7953530845,
-      "mase": 2.3816078978,
-      "mae_p50": 18.3124181674,
-      "pinball_p50": 9.1562090837,
-      "coverage80": 0.7938101213,
-      "mean_pred": 17.761692857,
+      "mae": 21.18760653,
+      "mase": 2.6278570216,
+      "mae_p50": 18.2565648535,
+      "pinball_p50": 9.1282824268,
+      "coverage80": 0.7894186533,
+      "mean_pred": 19.1893056383,
       "mean_actual": 12.9054788791
     },
     {
@@ -1268,12 +1278,12 @@
       "model": "croston_sba",
       "demand_class": "fast",
       "n_obs": 3054,
-      "mae": 48.7820745085,
-      "mase": 0.7706260064,
-      "mae_p50": 46.7403330885,
-      "pinball_p50": 23.3701665442,
-      "coverage80": 0.8447937132,
-      "mean_pred": 56.8183151363,
+      "mae": 48.7981481775,
+      "mase": 0.7708786977,
+      "mae_p50": 46.7397370297,
+      "pinball_p50": 23.3698685148,
+      "coverage80": 0.8444662737,
+      "mean_pred": 56.8896379034,
       "mean_actual": 66.3611656843
     },
     {
@@ -1281,12 +1291,12 @@
       "model": "croston_sba",
       "demand_class": "medium",
       "n_obs": 936,
-      "mae": 14.6147141329,
-      "mase": 0.7882090553,
-      "mae_p50": 11.6782882369,
-      "pinball_p50": 5.8391441184,
-      "coverage80": 0.8942307692,
-      "mean_pred": 12.7331270944,
+      "mae": 14.6318670564,
+      "mase": 0.7890519336,
+      "mae_p50": 11.6759903097,
+      "pinball_p50": 5.8379951549,
+      "coverage80": 0.8931623932,
+      "mean_pred": 12.7611574361,
       "mean_actual": 10.4829059829
     },
     {
@@ -1294,12 +1304,12 @@
       "model": "croston_sba",
       "demand_class": "slow",
       "n_obs": 786,
-      "mae": 10.5810737731,
-      "mase": 0.8284298384,
-      "mae_p50": 7.7057133898,
-      "pinball_p50": 3.8528566949,
+      "mae": 10.593589818,
+      "mase": 0.8291374547,
+      "mae_p50": 7.7070751296,
+      "pinball_p50": 3.8535375648,
       "coverage80": 0.8842239186,
-      "mean_pred": 10.1925753509,
+      "mean_pred": 10.2227127248,
       "mean_actual": 5.4961832061
     },
     {
@@ -1307,12 +1317,12 @@
       "model": "croston_sba",
       "demand_class": "intermittent",
       "n_obs": 4782,
-      "mae": 19.8141737969,
-      "mase": 2.2541595263,
-      "mae_p50": 16.5258115707,
-      "pinball_p50": 8.2629057854,
-      "coverage80": 0.8772480134,
-      "mean_pred": 17.761692857,
+      "mae": 20.1310669949,
+      "mase": 2.5012307455,
+      "mae_p50": 16.2727310332,
+      "pinball_p50": 8.1363655166,
+      "coverage80": 0.873902133,
+      "mean_pred": 19.1893056383,
       "mean_actual": 11.6748222501
     },
     {
@@ -1320,12 +1330,12 @@
       "model": "croston_sba",
       "demand_class": "fast",
       "n_obs": 3054,
-      "mae": 41.2919997427,
-      "mase": 0.6985876391,
-      "mae_p50": 38.1558236514,
-      "pinball_p50": 19.0779118257,
+      "mae": 41.3130515096,
+      "mase": 0.6987884956,
+      "mae_p50": 38.1485704802,
+      "pinball_p50": 19.0742852401,
       "coverage80": 0.9079895219,
-      "mean_pred": 56.8183151363,
+      "mean_pred": 56.8896379034,
       "mean_actual": 54.1430910282
     },
     {
@@ -1333,12 +1343,12 @@
       "model": "croston_sba",
       "demand_class": "medium",
       "n_obs": 936,
-      "mae": 17.5351222954,
-      "mase": 0.9800492385,
-      "mae_p50": 14.7205940498,
-      "pinball_p50": 7.3602970249,
-      "coverage80": 0.8952991453,
-      "mean_pred": 12.7331270944,
+      "mae": 17.5508362462,
+      "mase": 0.9808151891,
+      "mae_p50": 14.7135818525,
+      "pinball_p50": 7.3567909263,
+      "coverage80": 0.8963675214,
+      "mean_pred": 12.7611574361,
       "mean_actual": 13.9754273504
     },
     {
@@ -1346,12 +1356,12 @@
       "model": "croston_sba",
       "demand_class": "slow",
       "n_obs": 786,
-      "mae": 12.6297091304,
-      "mase": 1.0644330773,
-      "mae_p50": 9.608817088,
-      "pinball_p50": 4.804408544,
-      "coverage80": 0.9096692112,
-      "mean_pred": 10.1925753509,
+      "mae": 12.652358927,
+      "mase": 1.0658413429,
+      "mae_p50": 9.6036159443,
+      "pinball_p50": 4.8018079722,
+      "coverage80": 0.9083969466,
+      "mean_pred": 10.2227127248,
       "mean_actual": 7.8396946565
     },
     {
@@ -1359,12 +1369,12 @@
       "model": "croston_sba",
       "demand_class": "intermittent",
       "n_obs": 4782,
-      "mae": 19.5028825905,
-      "mase": 2.3021809303,
-      "mae_p50": 15.7819031364,
-      "pinball_p50": 7.8909515682,
-      "coverage80": 0.91300711,
-      "mean_pred": 17.761692857,
+      "mae": 20.2149403305,
+      "mase": 2.5550542993,
+      "mae_p50": 15.6609983519,
+      "pinball_p50": 7.830499176,
+      "coverage80": 0.8971141782,
+      "mean_pred": 19.1893056383,
       "mean_actual": 11.5250941029
     },
     {
@@ -2085,81 +2095,81 @@
       "model": "croston_sba",
       "origin": 77,
       "sum_actual": 85691.0,
-      "sum_pred": 92848.1652454297,
-      "wape": 0.0835229516,
-      "bias_pct": 0.0835229516
+      "sum_pred": 96665.3760835265,
+      "wape": 0.1280691798,
+      "bias_pct": 0.1280691798
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "origin": 85,
       "sum_actual": 83519.0,
-      "sum_pred": 90426.5211498027,
-      "wape": 0.0827059849,
-      "bias_pct": 0.0827059849
+      "sum_pred": 92470.9045622375,
+      "wape": 0.1071840487,
+      "bias_pct": 0.1071840487
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "origin": 93,
       "sum_actual": 90350.0,
-      "sum_pred": 95114.4344593711,
-      "wape": 0.0527330875,
-      "bias_pct": 0.0527330875
+      "sum_pred": 96347.4286354585,
+      "wape": 0.0663799517,
+      "bias_pct": 0.0663799517
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "origin": 77,
       "sum_actual": 78214.0,
-      "sum_pred": 92848.1652454297,
-      "wape": 0.1871041661,
-      "bias_pct": 0.1871041661
+      "sum_pred": 96665.3760835265,
+      "wape": 0.2359088665,
+      "bias_pct": 0.2359088665
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "origin": 85,
       "sum_actual": 75701.0,
-      "sum_pred": 90426.5211498027,
-      "wape": 0.1945221483,
-      "bias_pct": 0.1945221483
+      "sum_pred": 92470.9045622375,
+      "wape": 0.2215281775,
+      "bias_pct": 0.2215281775
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "origin": 93,
       "sum_actual": 118713.0,
-      "sum_pred": 95114.4344593711,
-      "wape": 0.1987867002,
-      "bias_pct": -0.1987867002
+      "sum_pred": 96347.4286354585,
+      "wape": 0.1884003552,
+      "bias_pct": -0.1884003552
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "origin": 77,
       "sum_actual": 59422.0,
-      "sum_pred": 92848.1652454297,
-      "wape": 0.5625217133,
-      "bias_pct": 0.5625217133
+      "sum_pred": 96665.3760835265,
+      "wape": 0.6267607298,
+      "bias_pct": 0.6267607298
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "origin": 85,
       "sum_actual": 74517.0,
-      "sum_pred": 90426.5211498027,
-      "wape": 0.2135019009,
-      "bias_pct": 0.2135019009
+      "sum_pred": 92470.9045622375,
+      "wape": 0.2409370286,
+      "bias_pct": 0.2409370286
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "origin": 93,
       "sum_actual": 105770.0,
-      "sum_pred": 95114.4344593711,
-      "wape": 0.1007427961,
-      "bias_pct": -0.1007427961
+      "sum_pred": 96347.4286354585,
+      "wape": 0.0890854814,
+      "bias_pct": -0.0890854814
     },
     {
       "horizon": 1,
@@ -3436,115 +3446,115 @@
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.05,
-      "q_obs": 0.5072190835
+      "q_obs": 0.5075329567
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.1,
-      "q_obs": 0.5210295041
+      "q_obs": 0.5218664993
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.15,
-      "q_obs": 0.5366185394
+      "q_obs": 0.5383971542
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.2,
-      "q_obs": 0.5491734673
+      "q_obs": 0.551998326
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.25,
-      "q_obs": 0.5634023854
+      "q_obs": 0.5668549906
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.3,
-      "q_obs": 0.5788867964
+      "q_obs": 0.5824440259
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.35,
-      "q_obs": 0.594266583
+      "q_obs": 0.5968821929
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.4,
-      "q_obs": 0.6104833647
+      "q_obs": 0.6149822139
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.45,
-      "q_obs": 0.6237706633
+      "q_obs": 0.6285833856
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.5,
-      "q_obs": 0.6396735719
+      "q_obs": 0.6448001674
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.55,
-      "q_obs": 0.6577735928
+      "q_obs": 0.6620631931
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.6,
-      "q_obs": 0.6765013601
+      "q_obs": 0.68173258
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.65,
-      "q_obs": 0.7018204645
+      "q_obs": 0.7072609332
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.7,
-      "q_obs": 0.7291274325
+      "q_obs": 0.7355095208
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.75,
-      "q_obs": 0.7586315129
+      "q_obs": 0.7650136012
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.8,
-      "q_obs": 0.7885540908
+      "q_obs": 0.7942038083
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.85,
-      "q_obs": 0.8331240845
+      "q_obs": 0.8328102113
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.9,
-      "q_obs": 0.8879472693
+      "q_obs": 0.8843900398
     },
     {
       "horizon": 1,
       "model": "croston_sba",
       "q_pred": 0.95,
-      "q_obs": 0.9473739276
+      "q_obs": 0.9428750785
     },
     {
       "horizon": 2,
@@ -3556,223 +3566,223 @@
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.1,
-      "q_obs": 0.5187277673
+      "q_obs": 0.5191462649
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.15,
-      "q_obs": 0.527306968
+      "q_obs": 0.5276208412
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.2,
-      "q_obs": 0.5398618958
+      "q_obs": 0.5399665202
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.25,
-      "q_obs": 0.553567692
+      "q_obs": 0.554613936
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.3,
-      "q_obs": 0.5675873614
+      "q_obs": 0.5702029713
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.35,
-      "q_obs": 0.581397782
+      "q_obs": 0.5842226407
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.4,
-      "q_obs": 0.5992885541
+      "q_obs": 0.6007532957
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.45,
-      "q_obs": 0.6188533166
+      "q_obs": 0.6219920485
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.5,
-      "q_obs": 0.6424984306
+      "q_obs": 0.6460556602
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.55,
-      "q_obs": 0.6698053986
+      "q_obs": 0.6728395062
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.6,
-      "q_obs": 0.6962753714
+      "q_obs": 0.7009834693
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.65,
-      "q_obs": 0.7263025738
+      "q_obs": 0.7301736765
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.7,
-      "q_obs": 0.7546557857
+      "q_obs": 0.7583176397
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.75,
-      "q_obs": 0.7880309688
+      "q_obs": 0.7908558276
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.8,
-      "q_obs": 0.8246495083
+      "q_obs": 0.8222431471
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.85,
-      "q_obs": 0.8712073656
+      "q_obs": 0.8669177652
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.9,
-      "q_obs": 0.9108600126
+      "q_obs": 0.9084536514
     },
     {
       "horizon": 2,
       "model": "croston_sba",
       "q_pred": 0.95,
-      "q_obs": 0.9546976355
+      "q_obs": 0.9515589035
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.05,
-      "q_obs": 0.5145427914
+      "q_obs": 0.5146474158
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.1,
-      "q_obs": 0.5183092697
+      "q_obs": 0.5184138941
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.15,
-      "q_obs": 0.5238543628
+      "q_obs": 0.524168236
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.2,
-      "q_obs": 0.5321196903
+      "q_obs": 0.5326428123
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.25,
-      "q_obs": 0.5430006277
+      "q_obs": 0.5437329985
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.3,
-      "q_obs": 0.5558694288
+      "q_obs": 0.5572295459
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.35,
-      "q_obs": 0.568005859
+      "q_obs": 0.5703075957
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.4,
-      "q_obs": 0.5834902699
+      "q_obs": 0.5865243775
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.45,
-      "q_obs": 0.6046243984
+      "q_obs": 0.6074492572
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.5,
-      "q_obs": 0.6269093953
+      "q_obs": 0.6300481272
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.55,
-      "q_obs": 0.658087466
+      "q_obs": 0.6609123248
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.6,
-      "q_obs": 0.6875915463
+      "q_obs": 0.6889516635
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.65,
-      "q_obs": 0.7192927391
+      "q_obs": 0.7209667294
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.7,
-      "q_obs": 0.7538187905
+      "q_obs": 0.7566436493
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.75,
-      "q_obs": 0.7903327056
+      "q_obs": 0.7906465788
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.8,
-      "q_obs": 0.8322870893
+      "q_obs": 0.8272651182
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.85,
-      "q_obs": 0.8772755807
+      "q_obs": 0.8704749948
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.9,
-      "q_obs": 0.9271814187
+      "q_obs": 0.9189160912
     },
     {
       "horizon": 4,
       "model": "croston_sba",
       "q_pred": 0.95,
-      "q_obs": 0.9655785729
+      "q_obs": 0.9617074702
     },
     {
       "horizon": 1,
@@ -4835,8 +4845,8 @@
       "model": "croston_sba",
       "n_obs": 878,
       "n_skus": 878,
-      "mase": 5.1868461468,
-      "mae": 19.3794301634
+      "mase": 6.3589466082,
+      "mae": 20.4759203374
     },
     {
       "origin": 77,
@@ -4898,8 +4908,8 @@
       "model": "croston_sba",
       "n_obs": 2306,
       "n_skus": 2306,
-      "mase": 1.2690524614,
-      "mae": 30.2956297235
+      "mase": 1.2789241095,
+      "mae": 30.4397115987
     },
     {
       "origin": 77,
@@ -4961,8 +4971,8 @@
       "model": "croston_sba",
       "n_obs": 768,
       "n_skus": 768,
-      "mase": 2.1735576958,
-      "mae": 19.3898137215
+      "mase": 2.2752464218,
+      "mae": 19.8747487018
     },
     {
       "origin": 85,
@@ -5024,8 +5034,8 @@
       "model": "croston_sba",
       "n_obs": 2418,
       "n_skus": 2418,
-      "mase": 0.9067000208,
-      "mae": 26.73083672
+      "mase": 0.91028255,
+      "mae": 26.7644482254
     },
     {
       "origin": 85,
@@ -5087,8 +5097,8 @@
       "model": "croston_sba",
       "n_obs": 652,
       "n_skus": 652,
-      "mase": 1.7073796178,
-      "mae": 20.1647585477
+      "mase": 1.7597197332,
+      "mae": 20.2756338466
     },
     {
       "origin": 93,
@@ -5150,8 +5160,8 @@
       "model": "croston_sba",
       "n_obs": 2534,
       "n_skus": 2534,
-      "mase": 1.0000605376,
-      "mae": 26.1499185258
+      "mase": 1.0024524402,
+      "mae": 26.194116389
     },
     {
       "origin": 93,
@@ -5219,6 +5229,25 @@
     },
     "n_sku_decisions_per_cell": 9558,
     "oracle_cost": 0.0,
+    "paired_test_central": {
+      "lead_time": 4,
+      "cost_ratio": 9,
+      "model": "ses",
+      "policy": "quantile",
+      "best_baseline": "ses",
+      "null": "savings <= 0",
+      "observed_savings_pct": 23.82,
+      "ci_low_pct": 21.2,
+      "ci_high_pct": 26.18,
+      "p_value_one_sided": 9.999000099990002e-05,
+      "p_value_at_resolution": true,
+      "p_value_upper_bound": 9.999000099990002e-05,
+      "n_replicates_le_zero": 0,
+      "n_sku_resamples": 10000,
+      "ci_resamples": 500,
+      "n_skus": 3186,
+      "test": "paired SKU bootstrap: per-SKU costs summed over origins, whole SKUs resampled with replacement; test draws are independent of the CI draws"
+    },
     "cost_share_top20_skus_pct": 16.15,
     "rows": [
       {
@@ -5774,188 +5803,188 @@
         "savings_vs_best_point_all_pct": 33.99
       },
       {
-        "total_cost": 17453.64,
-        "holding_cost": 9656.84,
-        "stockout_cost": 7796.8,
-        "cost_per_sku_decision": 1.826,
-        "fill_rate": 0.5953,
-        "cycle_service_level": 0.735,
-        "avg_inventory_units": 25.105,
-        "weeks_of_cover": 0.902,
-        "avg_order": 58.253,
+        "total_cost": 17660.52,
+        "holding_cost": 10085.21,
+        "stockout_cost": 7575.31,
+        "cost_per_sku_decision": 1.848,
+        "fill_rate": 0.607,
+        "cycle_service_level": 0.7436,
+        "avg_inventory_units": 25.94,
+        "weeks_of_cover": 0.932,
+        "avg_order": 59.737,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -35.92,
-        "ci_low_pct": -44.81,
-        "ci_high_pct": -28.37,
+        "savings_vs_best_simple_point_pct": -37.54,
+        "ci_low_pct": -46.37,
+        "ci_high_pct": -29.66,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_quantile",
         "best_point_cost_all": 11418.61,
-        "savings_vs_best_point_all_pct": -52.85
+        "savings_vs_best_point_all_pct": -54.66
       },
       {
-        "total_cost": 33047.24,
-        "holding_cost": 9656.84,
-        "stockout_cost": 23390.4,
-        "cost_per_sku_decision": 3.458,
-        "fill_rate": 0.5953,
-        "cycle_service_level": 0.735,
-        "avg_inventory_units": 25.105,
-        "weeks_of_cover": 0.902,
-        "avg_order": 58.253,
+        "total_cost": 32811.14,
+        "holding_cost": 10085.21,
+        "stockout_cost": 22725.93,
+        "cost_per_sku_decision": 3.433,
+        "fill_rate": 0.607,
+        "cycle_service_level": 0.7436,
+        "avg_inventory_units": 25.94,
+        "weeks_of_cover": 0.932,
+        "avg_order": 59.737,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -25.09,
-        "ci_low_pct": -30.01,
-        "ci_high_pct": -20.3,
+        "savings_vs_best_simple_point_pct": -24.19,
+        "ci_low_pct": -28.96,
+        "ci_high_pct": -19.38,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 25900.07,
-        "savings_vs_best_point_all_pct": -27.6
+        "savings_vs_best_point_all_pct": -26.68
       },
       {
-        "total_cost": 79828.03,
-        "holding_cost": 9656.84,
-        "stockout_cost": 70171.19,
-        "cost_per_sku_decision": 8.352,
-        "fill_rate": 0.5953,
-        "cycle_service_level": 0.735,
-        "avg_inventory_units": 25.105,
-        "weeks_of_cover": 0.902,
-        "avg_order": 58.253,
+        "total_cost": 78262.99,
+        "holding_cost": 10085.21,
+        "stockout_cost": 68177.78,
+        "cost_per_sku_decision": 8.188,
+        "fill_rate": 0.607,
+        "cycle_service_level": 0.7436,
+        "avg_inventory_units": 25.94,
+        "weeks_of_cover": 0.932,
+        "avg_order": 59.737,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": -18.87,
-        "ci_low_pct": -22.85,
+        "savings_vs_best_simple_point_pct": -16.54,
+        "ci_low_pct": -20.08,
+        "ci_high_pct": -13.2,
+        "best_baseline": "ses",
+        "best_point_model_all": "lgbm_tweedie",
+        "best_point_cost_all": 62748.14,
+        "savings_vs_best_point_all_pct": -24.73
+      },
+      {
+        "total_cost": 154016.09,
+        "holding_cost": 10085.21,
+        "stockout_cost": 143930.87,
+        "cost_per_sku_decision": 16.114,
+        "fill_rate": 0.607,
+        "cycle_service_level": 0.7436,
+        "avg_inventory_units": 25.94,
+        "weeks_of_cover": 0.932,
+        "avg_order": 59.737,
+        "total_demand": 532188.0,
+        "lead_time": 2,
+        "model": "croston_sba",
+        "policy": "point",
+        "cost_ratio": 19.0,
+        "savings_vs_best_simple_point_pct": -14.04,
+        "ci_low_pct": -17.4,
+        "ci_high_pct": -10.94,
+        "best_baseline": "ses",
+        "best_point_model_all": "lgbm_tweedie",
+        "best_point_cost_all": 124161.6,
+        "savings_vs_best_point_all_pct": -24.04
+      },
+      {
+        "total_cost": 15638.06,
+        "holding_cost": 5975.54,
+        "stockout_cost": 9662.51,
+        "cost_per_sku_decision": 1.636,
+        "fill_rate": 0.5199,
+        "cycle_service_level": 0.594,
+        "avg_inventory_units": 17.588,
+        "weeks_of_cover": 0.632,
+        "avg_order": 46.536,
+        "total_demand": 532188.0,
+        "lead_time": 2,
+        "model": "croston_sba",
+        "policy": "quantile",
+        "cost_ratio": 1.0,
+        "savings_vs_best_simple_point_pct": -21.79,
+        "ci_low_pct": -29.23,
         "ci_high_pct": -15.38,
         "best_baseline": "ses",
-        "best_point_model_all": "lgbm_tweedie",
-        "best_point_cost_all": 62748.14,
-        "savings_vs_best_point_all_pct": -27.22
-      },
-      {
-        "total_cost": 157796.01,
-        "holding_cost": 9656.84,
-        "stockout_cost": 148139.17,
-        "cost_per_sku_decision": 16.509,
-        "fill_rate": 0.5953,
-        "cycle_service_level": 0.735,
-        "avg_inventory_units": 25.105,
-        "weeks_of_cover": 0.902,
-        "avg_order": 58.253,
-        "total_demand": 532188.0,
-        "lead_time": 2,
-        "model": "croston_sba",
-        "policy": "point",
-        "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": -16.84,
-        "ci_low_pct": -20.49,
-        "ci_high_pct": -13.39,
-        "best_baseline": "ses",
-        "best_point_model_all": "lgbm_tweedie",
-        "best_point_cost_all": 124161.6,
-        "savings_vs_best_point_all_pct": -27.09
-      },
-      {
-        "total_cost": 15693.54,
-        "holding_cost": 5835.84,
-        "stockout_cost": 9857.69,
-        "cost_per_sku_decision": 1.642,
-        "fill_rate": 0.5095,
-        "cycle_service_level": 0.5889,
-        "avg_inventory_units": 17.284,
-        "weeks_of_cover": 0.621,
-        "avg_order": 45.651,
-        "total_demand": 532188.0,
-        "lead_time": 2,
-        "model": "croston_sba",
-        "policy": "quantile",
-        "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -22.22,
-        "ci_low_pct": -29.81,
-        "ci_high_pct": -15.83,
-        "best_baseline": "ses",
         "best_point_model_all": "lgbm_quantile",
         "best_point_cost_all": 11418.61,
-        "savings_vs_best_point_all_pct": -37.44
+        "savings_vs_best_point_all_pct": -36.95
       },
       {
-        "total_cost": 32186.05,
-        "holding_cost": 10349.85,
-        "stockout_cost": 21836.2,
-        "cost_per_sku_decision": 3.367,
-        "fill_rate": 0.6226,
-        "cycle_service_level": 0.7412,
-        "avg_inventory_units": 27.08,
-        "weeks_of_cover": 0.973,
-        "avg_order": 61.747,
+        "total_cost": 31828.5,
+        "holding_cost": 10564.61,
+        "stockout_cost": 21263.9,
+        "cost_per_sku_decision": 3.33,
+        "fill_rate": 0.633,
+        "cycle_service_level": 0.7465,
+        "avg_inventory_units": 27.534,
+        "weeks_of_cover": 0.989,
+        "avg_order": 62.776,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -21.83,
-        "ci_low_pct": -26.57,
-        "ci_high_pct": -17.27,
+        "savings_vs_best_simple_point_pct": -20.47,
+        "ci_low_pct": -25.19,
+        "ci_high_pct": -15.98,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 25900.07,
-        "savings_vs_best_point_all_pct": -24.27
+        "savings_vs_best_point_all_pct": -22.89
       },
       {
-        "total_cost": 64585.83,
-        "holding_cost": 22419.21,
-        "stockout_cost": 42166.62,
-        "cost_per_sku_decision": 6.757,
-        "fill_rate": 0.7475,
-        "cycle_service_level": 0.8894,
-        "avg_inventory_units": 52.024,
-        "weeks_of_cover": 1.869,
-        "avg_order": 93.647,
+        "total_cost": 63629.9,
+        "holding_cost": 21742.77,
+        "stockout_cost": 41887.14,
+        "cost_per_sku_decision": 6.657,
+        "fill_rate": 0.7511,
+        "cycle_service_level": 0.8843,
+        "avg_inventory_units": 50.903,
+        "weeks_of_cover": 1.828,
+        "avg_order": 92.726,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": 3.83,
-        "ci_low_pct": -0.14,
-        "ci_high_pct": 7.67,
+        "savings_vs_best_simple_point_pct": 5.25,
+        "ci_low_pct": 1.46,
+        "ci_high_pct": 8.98,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 62748.14,
-        "savings_vs_best_point_all_pct": -2.93
+        "savings_vs_best_point_all_pct": -1.41
       },
       {
-        "total_cost": 100209.39,
-        "holding_cost": 38294.39,
-        "stockout_cost": 61915.0,
-        "cost_per_sku_decision": 10.484,
-        "fill_rate": 0.8213,
-        "cycle_service_level": 0.9431,
-        "avg_inventory_units": 84.618,
-        "weeks_of_cover": 3.039,
-        "avg_order": 130.35,
+        "total_cost": 98646.08,
+        "holding_cost": 36593.04,
+        "stockout_cost": 62053.04,
+        "cost_per_sku_decision": 10.321,
+        "fill_rate": 0.822,
+        "cycle_service_level": 0.9411,
+        "avg_inventory_units": 81.708,
+        "weeks_of_cover": 2.935,
+        "avg_order": 127.477,
         "total_demand": 532188.0,
         "lead_time": 2,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": 25.8,
-        "ci_low_pct": 22.16,
-        "ci_high_pct": 29.63,
+        "savings_vs_best_simple_point_pct": 26.96,
+        "ci_low_pct": 23.29,
+        "ci_high_pct": 30.74,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 124161.6,
-        "savings_vs_best_point_all_pct": 19.29
+        "savings_vs_best_point_all_pct": 20.55
       },
       {
         "total_cost": 13694.88,
@@ -7085,188 +7114,188 @@
         "savings_vs_best_point_all_pct": 38.66
       },
       {
-        "total_cost": 61081.96,
-        "holding_cost": 37010.95,
-        "stockout_cost": 24071.01,
-        "cost_per_sku_decision": 6.391,
-        "fill_rate": 0.6593,
-        "cycle_service_level": 0.7147,
-        "avg_inventory_units": 47.61,
-        "weeks_of_cover": 1.823,
-        "avg_order": 116.505,
+        "total_cost": 62116.1,
+        "holding_cost": 38827.74,
+        "stockout_cost": 23288.36,
+        "cost_per_sku_decision": 6.499,
+        "fill_rate": 0.6704,
+        "cycle_service_level": 0.7244,
+        "avg_inventory_units": 49.422,
+        "weeks_of_cover": 1.892,
+        "avg_order": 119.474,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -39.23,
-        "ci_low_pct": -48.19,
-        "ci_high_pct": -30.21,
+        "savings_vs_best_simple_point_pct": -41.58,
+        "ci_low_pct": -50.72,
+        "ci_high_pct": -32.47,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_quantile",
         "best_point_cost_all": 38096.18,
-        "savings_vs_best_point_all_pct": -60.34
+        "savings_vs_best_point_all_pct": -63.05
       },
       {
-        "total_cost": 109223.98,
-        "holding_cost": 37010.95,
-        "stockout_cost": 72213.03,
-        "cost_per_sku_decision": 11.427,
-        "fill_rate": 0.6593,
-        "cycle_service_level": 0.7147,
-        "avg_inventory_units": 47.61,
-        "weeks_of_cover": 1.823,
-        "avg_order": 116.505,
+        "total_cost": 108692.82,
+        "holding_cost": 38827.74,
+        "stockout_cost": 69865.08,
+        "cost_per_sku_decision": 11.372,
+        "fill_rate": 0.6704,
+        "cycle_service_level": 0.7244,
+        "avg_inventory_units": 49.422,
+        "weeks_of_cover": 1.892,
+        "avg_order": 119.474,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -28.2,
-        "ci_low_pct": -33.93,
-        "ci_high_pct": -23.13,
+        "savings_vs_best_simple_point_pct": -27.58,
+        "ci_low_pct": -33.38,
+        "ci_high_pct": -22.26,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 81969.21,
-        "savings_vs_best_point_all_pct": -33.25
+        "savings_vs_best_point_all_pct": -32.6
       },
       {
-        "total_cost": 253650.04,
-        "holding_cost": 37010.95,
-        "stockout_cost": 216639.1,
-        "cost_per_sku_decision": 26.538,
-        "fill_rate": 0.6593,
-        "cycle_service_level": 0.7147,
-        "avg_inventory_units": 47.61,
-        "weeks_of_cover": 1.823,
-        "avg_order": 116.505,
+        "total_cost": 248422.99,
+        "holding_cost": 38827.74,
+        "stockout_cost": 209595.25,
+        "cost_per_sku_decision": 25.991,
+        "fill_rate": 0.6704,
+        "cycle_service_level": 0.7244,
+        "avg_inventory_units": 49.422,
+        "weeks_of_cover": 1.892,
+        "avg_order": 119.474,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": -21.26,
-        "ci_low_pct": -25.71,
-        "ci_high_pct": -17.66,
+        "savings_vs_best_simple_point_pct": -18.76,
+        "ci_low_pct": -23.0,
+        "ci_high_pct": -15.35,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 195812.1,
-        "savings_vs_best_point_all_pct": -29.54
+        "savings_vs_best_point_all_pct": -26.87
       },
       {
-        "total_cost": 494360.15,
-        "holding_cost": 37010.95,
-        "stockout_cost": 457349.21,
-        "cost_per_sku_decision": 51.722,
-        "fill_rate": 0.6593,
-        "cycle_service_level": 0.7147,
-        "avg_inventory_units": 47.61,
-        "weeks_of_cover": 1.823,
-        "avg_order": 116.505,
+        "total_cost": 481306.6,
+        "holding_cost": 38827.74,
+        "stockout_cost": 442478.86,
+        "cost_per_sku_decision": 50.356,
+        "fill_rate": 0.6704,
+        "cycle_service_level": 0.7244,
+        "avg_inventory_units": 49.422,
+        "weeks_of_cover": 1.892,
+        "avg_order": 119.474,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": -18.89,
-        "ci_low_pct": -22.95,
-        "ci_high_pct": -15.61,
+        "savings_vs_best_simple_point_pct": -15.75,
+        "ci_low_pct": -19.25,
+        "ci_high_pct": -12.63,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 385550.25,
-        "savings_vs_best_point_all_pct": -28.22
+        "savings_vs_best_point_all_pct": -24.84
       },
       {
-        "total_cost": 55070.74,
-        "holding_cost": 24007.24,
-        "stockout_cost": 31063.5,
-        "cost_per_sku_decision": 5.762,
-        "fill_rate": 0.5827,
-        "cycle_service_level": 0.549,
-        "avg_inventory_units": 34.489,
-        "weeks_of_cover": 1.32,
-        "avg_order": 95.376,
+        "total_cost": 54925.46,
+        "holding_cost": 24565.01,
+        "stockout_cost": 30360.45,
+        "cost_per_sku_decision": 5.747,
+        "fill_rate": 0.5928,
+        "cycle_service_level": 0.5536,
+        "avg_inventory_units": 35.129,
+        "weeks_of_cover": 1.345,
+        "avg_order": 97.07,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -25.53,
-        "ci_low_pct": -33.44,
-        "ci_high_pct": -18.0,
+        "savings_vs_best_simple_point_pct": -25.19,
+        "ci_low_pct": -33.35,
+        "ci_high_pct": -17.64,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_quantile",
         "best_point_cost_all": 38096.18,
-        "savings_vs_best_point_all_pct": -44.56
+        "savings_vs_best_point_all_pct": -44.18
       },
       {
-        "total_cost": 106293.24,
-        "holding_cost": 41122.05,
-        "stockout_cost": 65171.2,
-        "cost_per_sku_decision": 11.121,
-        "fill_rate": 0.691,
-        "cycle_service_level": 0.7253,
-        "avg_inventory_units": 52.793,
-        "weeks_of_cover": 2.021,
-        "avg_order": 124.995,
+        "total_cost": 105334.08,
+        "holding_cost": 41729.96,
+        "stockout_cost": 63604.13,
+        "cost_per_sku_decision": 11.021,
+        "fill_rate": 0.6996,
+        "cycle_service_level": 0.722,
+        "avg_inventory_units": 53.507,
+        "weeks_of_cover": 2.048,
+        "avg_order": 126.604,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -24.76,
-        "ci_low_pct": -30.36,
-        "ci_high_pct": -19.67,
+        "savings_vs_best_simple_point_pct": -23.63,
+        "ci_low_pct": -29.22,
+        "ci_high_pct": -18.6,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 81969.21,
-        "savings_vs_best_point_all_pct": -29.67
+        "savings_vs_best_point_all_pct": -28.5
       },
       {
-        "total_cost": 203394.87,
-        "holding_cost": 82905.11,
-        "stockout_cost": 120489.76,
-        "cost_per_sku_decision": 21.28,
-        "fill_rate": 0.7998,
-        "cycle_service_level": 0.887,
-        "avg_inventory_units": 95.31,
-        "weeks_of_cover": 3.649,
-        "avg_order": 178.884,
+        "total_cost": 200057.58,
+        "holding_cost": 79797.3,
+        "stockout_cost": 120260.28,
+        "cost_per_sku_decision": 20.931,
+        "fill_rate": 0.8014,
+        "cycle_service_level": 0.881,
+        "avg_inventory_units": 92.839,
+        "weeks_of_cover": 3.554,
+        "avg_order": 176.579,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": 2.76,
-        "ci_low_pct": -1.56,
-        "ci_high_pct": 6.71,
+        "savings_vs_best_simple_point_pct": 4.36,
+        "ci_low_pct": 0.23,
+        "ci_high_pct": 8.31,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 195812.1,
-        "savings_vs_best_point_all_pct": -3.87
+        "savings_vs_best_point_all_pct": -2.17
       },
       {
-        "total_cost": 303084.18,
-        "holding_cost": 138259.1,
-        "stockout_cost": 164825.08,
-        "cost_per_sku_decision": 31.71,
-        "fill_rate": 0.8648,
-        "cycle_service_level": 0.9418,
-        "avg_inventory_units": 151.464,
-        "weeks_of_cover": 5.798,
-        "avg_order": 241.822,
+        "total_cost": 297025.52,
+        "holding_cost": 131151.33,
+        "stockout_cost": 165874.19,
+        "cost_per_sku_decision": 31.076,
+        "fill_rate": 0.8646,
+        "cycle_service_level": 0.9403,
+        "avg_inventory_units": 145.437,
+        "weeks_of_cover": 5.568,
+        "avg_order": 235.776,
         "total_demand": 998708.0,
         "lead_time": 4,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": 27.11,
-        "ci_low_pct": 23.06,
-        "ci_high_pct": 31.01,
+        "savings_vs_best_simple_point_pct": 28.57,
+        "ci_low_pct": 24.61,
+        "ci_high_pct": 32.3,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 385550.25,
-        "savings_vs_best_point_all_pct": 21.39
+        "savings_vs_best_point_all_pct": 22.96
       },
       {
         "total_cost": 46089.79,
@@ -8396,188 +8425,188 @@
         "savings_vs_best_point_all_pct": 46.96
       },
       {
-        "total_cost": 243659.12,
-        "holding_cost": 133990.37,
-        "stockout_cost": 109668.75,
-        "cost_per_sku_decision": 25.493,
-        "fill_rate": 0.656,
-        "cycle_service_level": 0.6644,
-        "avg_inventory_units": 85.656,
-        "weeks_of_cover": 3.051,
-        "avg_order": 233.01,
+        "total_cost": 246556.08,
+        "holding_cost": 140637.74,
+        "stockout_cost": 105918.34,
+        "cost_per_sku_decision": 25.796,
+        "fill_rate": 0.6688,
+        "cycle_service_level": 0.674,
+        "avg_inventory_units": 88.718,
+        "weeks_of_cover": 3.16,
+        "avg_order": 238.948,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -40.66,
-        "ci_low_pct": -49.07,
-        "ci_high_pct": -32.9,
+        "savings_vs_best_simple_point_pct": -42.33,
+        "ci_low_pct": -50.83,
+        "ci_high_pct": -34.49,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 167750.04,
-        "savings_vs_best_point_all_pct": -45.25
+        "savings_vs_best_point_all_pct": -46.98
       },
       {
-        "total_cost": 462996.62,
-        "holding_cost": 133990.37,
-        "stockout_cost": 329006.25,
-        "cost_per_sku_decision": 48.441,
-        "fill_rate": 0.656,
-        "cycle_service_level": 0.6644,
-        "avg_inventory_units": 85.656,
-        "weeks_of_cover": 3.051,
-        "avg_order": 233.01,
+        "total_cost": 458392.75,
+        "holding_cost": 140637.74,
+        "stockout_cost": 317755.01,
+        "cost_per_sku_decision": 47.959,
+        "fill_rate": 0.6688,
+        "cycle_service_level": 0.674,
+        "avg_inventory_units": 88.718,
+        "weeks_of_cover": 3.16,
+        "avg_order": 238.948,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -27.3,
-        "ci_low_pct": -31.79,
-        "ci_high_pct": -22.92,
+        "savings_vs_best_simple_point_pct": -26.03,
+        "ci_low_pct": -30.79,
+        "ci_high_pct": -21.61,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 351519.48,
-        "savings_vs_best_point_all_pct": -31.71
+        "savings_vs_best_point_all_pct": -30.4
       },
       {
-        "total_cost": 1121009.13,
-        "holding_cost": 133990.37,
-        "stockout_cost": 987018.76,
-        "cost_per_sku_decision": 117.285,
-        "fill_rate": 0.656,
-        "cycle_service_level": 0.6644,
-        "avg_inventory_units": 85.656,
-        "weeks_of_cover": 3.051,
-        "avg_order": 233.01,
+        "total_cost": 1093902.78,
+        "holding_cost": 140637.74,
+        "stockout_cost": 953265.04,
+        "cost_per_sku_decision": 114.449,
+        "fill_rate": 0.6688,
+        "cycle_service_level": 0.674,
+        "avg_inventory_units": 88.718,
+        "weeks_of_cover": 3.16,
+        "avg_order": 238.948,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": -19.87,
-        "ci_low_pct": -23.45,
-        "ci_high_pct": -16.46,
+        "savings_vs_best_simple_point_pct": -16.97,
+        "ci_low_pct": -20.56,
+        "ci_high_pct": -13.72,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 902827.83,
-        "savings_vs_best_point_all_pct": -24.17
+        "savings_vs_best_point_all_pct": -21.16
       },
       {
-        "total_cost": 2217696.64,
-        "holding_cost": 133990.37,
-        "stockout_cost": 2083706.27,
-        "cost_per_sku_decision": 232.025,
-        "fill_rate": 0.656,
-        "cycle_service_level": 0.6644,
-        "avg_inventory_units": 85.656,
-        "weeks_of_cover": 3.051,
-        "avg_order": 233.01,
+        "total_cost": 2153086.15,
+        "holding_cost": 140637.74,
+        "stockout_cost": 2012448.41,
+        "cost_per_sku_decision": 225.265,
+        "fill_rate": 0.6688,
+        "cycle_service_level": 0.674,
+        "avg_inventory_units": 88.718,
+        "weeks_of_cover": 3.16,
+        "avg_order": 238.948,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "point",
         "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": -17.49,
-        "ci_low_pct": -21.03,
-        "ci_high_pct": -14.24,
+        "savings_vs_best_simple_point_pct": -14.07,
+        "ci_low_pct": -17.64,
+        "ci_high_pct": -10.93,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 1821675.07,
-        "savings_vs_best_point_all_pct": -21.74
+        "savings_vs_best_point_all_pct": -18.19
       },
       {
-        "total_cost": 228229.68,
-        "holding_cost": 90690.32,
-        "stockout_cost": 137539.36,
-        "cost_per_sku_decision": 23.878,
-        "fill_rate": 0.586,
-        "cycle_service_level": 0.491,
-        "avg_inventory_units": 64.007,
-        "weeks_of_cover": 2.28,
-        "avg_order": 195.639,
+        "total_cost": 226931.02,
+        "holding_cost": 92314.77,
+        "stockout_cost": 134616.25,
+        "cost_per_sku_decision": 23.743,
+        "fill_rate": 0.5963,
+        "cycle_service_level": 0.4935,
+        "avg_inventory_units": 64.841,
+        "weeks_of_cover": 2.309,
+        "avg_order": 198.786,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 1.0,
-        "savings_vs_best_simple_point_pct": -31.75,
-        "ci_low_pct": -39.46,
-        "ci_high_pct": -24.94,
+        "savings_vs_best_simple_point_pct": -31.0,
+        "ci_low_pct": -38.73,
+        "ci_high_pct": -24.29,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 167750.04,
-        "savings_vs_best_point_all_pct": -36.05
+        "savings_vs_best_point_all_pct": -35.28
       },
       {
-        "total_cost": 445321.2,
-        "holding_cost": 150615.9,
-        "stockout_cost": 294705.3,
-        "cost_per_sku_decision": 46.591,
-        "fill_rate": 0.6901,
-        "cycle_service_level": 0.6901,
-        "avg_inventory_units": 95.711,
-        "weeks_of_cover": 3.409,
-        "avg_order": 250.715,
+        "total_cost": 439953.83,
+        "holding_cost": 152273.52,
+        "stockout_cost": 287680.3,
+        "cost_per_sku_decision": 46.03,
+        "fill_rate": 0.6994,
+        "cycle_service_level": 0.6824,
+        "avg_inventory_units": 96.549,
+        "weeks_of_cover": 3.439,
+        "avg_order": 253.639,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 3.0,
-        "savings_vs_best_simple_point_pct": -22.44,
-        "ci_low_pct": -27.03,
-        "ci_high_pct": -17.94,
+        "savings_vs_best_simple_point_pct": -20.96,
+        "ci_low_pct": -25.54,
+        "ci_high_pct": -16.39,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 351519.48,
-        "savings_vs_best_point_all_pct": -26.68
+        "savings_vs_best_point_all_pct": -25.16
       },
       {
-        "total_cost": 853896.28,
-        "holding_cost": 295938.55,
-        "stockout_cost": 557957.73,
-        "cost_per_sku_decision": 89.338,
-        "fill_rate": 0.7952,
-        "cycle_service_level": 0.8624,
-        "avg_inventory_units": 168.996,
-        "weeks_of_cover": 6.019,
-        "avg_order": 347.608,
+        "total_cost": 839681.62,
+        "holding_cost": 283491.56,
+        "stockout_cost": 556190.06,
+        "cost_per_sku_decision": 87.851,
+        "fill_rate": 0.798,
+        "cycle_service_level": 0.8554,
+        "avg_inventory_units": 163.735,
+        "weeks_of_cover": 5.832,
+        "avg_order": 342.994,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 9.0,
-        "savings_vs_best_simple_point_pct": 8.69,
-        "ci_low_pct": 5.13,
-        "ci_high_pct": 11.99,
+        "savings_vs_best_simple_point_pct": 10.21,
+        "ci_low_pct": 6.71,
+        "ci_high_pct": 13.6,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 902827.83,
-        "savings_vs_best_point_all_pct": 5.42
+        "savings_vs_best_point_all_pct": 6.99
       },
       {
-        "total_cost": 1270213.27,
-        "holding_cost": 509109.17,
-        "stockout_cost": 761104.09,
-        "cost_per_sku_decision": 132.895,
-        "fill_rate": 0.863,
-        "cycle_service_level": 0.9297,
-        "avg_inventory_units": 275.393,
-        "weeks_of_cover": 9.808,
-        "avg_order": 469.237,
+        "total_cost": 1256871.19,
+        "holding_cost": 468906.4,
+        "stockout_cost": 787964.79,
+        "cost_per_sku_decision": 131.499,
+        "fill_rate": 0.8599,
+        "cycle_service_level": 0.9227,
+        "avg_inventory_units": 257.922,
+        "weeks_of_cover": 9.186,
+        "avg_order": 451.083,
         "total_demand": 2146930.0,
         "lead_time": 8,
         "model": "croston_sba",
         "policy": "quantile",
         "cost_ratio": 19.0,
-        "savings_vs_best_simple_point_pct": 32.71,
-        "ci_low_pct": 29.05,
-        "ci_high_pct": 35.97,
+        "savings_vs_best_simple_point_pct": 33.41,
+        "ci_low_pct": 29.78,
+        "ci_high_pct": 36.68,
         "best_baseline": "ses",
         "best_point_model_all": "lgbm_tweedie",
         "best_point_cost_all": 1821675.07,
-        "savings_vs_best_point_all_pct": 30.27
+        "savings_vs_best_point_all_pct": 31.0
       },
       {
         "total_cost": 192271.06,
@@ -9428,12 +9457,12 @@
         },
         {
           "model": "croston_sba",
-          "mae": 25.727054788002828,
-          "rmse": 86.71363393127923,
-          "mase": 1.5686002267321844,
-          "mase_p50": 1.1837399375151436,
-          "pinball_p50": 11.758716219496565,
-          "coverage80": 0.800376647834275
+          "mae": 25.934076822131303,
+          "rmse": 86.76220332590343,
+          "mase": 1.691958803445842,
+          "mase_p50": 1.261495862231428,
+          "pinball_p50": 11.745950834249768,
+          "coverage80": 0.7982841598660808
         },
         {
           "model": "seasonal_naive",
@@ -9462,7 +9491,7 @@
         "coverage80": 0.789181837204436
       },
       "ses_mase": 0.8187716369747438,
-      "croston_sba_mase": 1.5686002267321844,
+      "croston_sba_mase": 1.691958803445842,
       "models_beating_ses_mase": [
         "lgbm_quantile"
       ],
@@ -9477,13 +9506,13 @@
       "coverage80_max": 0.8060263653483992
     },
     "calibration_h1": {
-      "observed_p_at_q10_min": 0.5210295040803515,
+      "observed_p_at_q10_min": 0.5218664992676292,
       "observed_p_at_q10_max": 0.5809792843691148,
-      "observed_p_at_q90_min": 0.8879472693032016,
+      "observed_p_at_q90_min": 0.8843900397572714,
       "observed_p_at_q90_max": 0.9138941201088092,
       "strict_below_q10_min": 0.0835948943293576,
       "strict_below_q10_max": 0.13548859594057333,
-      "at_or_below_q90_min": 0.8879472693032016,
+      "at_or_below_q90_min": 0.8843900397572714,
       "at_or_below_q90_max": 0.9138941201088093,
       "per_model": {
         "lgbm_quantile": {
@@ -9507,8 +9536,8 @@
           "p_y_le_q90": 0.8896212596777568
         },
         "croston_sba": {
-          "p_y_lt_q10": 0.08757062146892655,
-          "p_y_le_q90": 0.8879472693032016
+          "p_y_lt_q10": 0.08610587989119063,
+          "p_y_le_q90": 0.8843900397572714
         },
         "seasonal_naive": {
           "p_y_lt_q10": 0.12492153170119272,
@@ -9518,7 +9547,7 @@
       "note": "atom at zero: P(y<=q10) is inflated; P(y<q10) and P(y<=q90) are the meaningful checks"
     },
     "aggregate_h1_pooled_wape": {
-      "croston_sba": 0.07254245975729506,
+      "croston_sba": 0.09987559439521691,
       "glm_poisson": 0.2601411583462279,
       "lgbm_quantile": 0.4005352418867337,
       "lgbm_tweedie": 0.2709575355876227,
@@ -9666,19 +9695,19 @@
           "cost_ratio": 9.0,
           "model": "croston_sba",
           "policy": "point",
-          "total_cost": 253650.04,
-          "holding_cost": 37010.95,
-          "stockout_cost": 216639.1,
-          "fill_rate": 0.6593,
-          "avg_inventory_units": 47.61,
-          "weeks_of_cover": 1.823,
-          "savings_vs_best_simple_point_pct": -21.26,
-          "ci_low_pct": -25.71,
-          "ci_high_pct": -17.66,
+          "total_cost": 248422.99,
+          "holding_cost": 38827.74,
+          "stockout_cost": 209595.25,
+          "fill_rate": 0.6704,
+          "avg_inventory_units": 49.422,
+          "weeks_of_cover": 1.892,
+          "savings_vs_best_simple_point_pct": -18.76,
+          "ci_low_pct": -23.0,
+          "ci_high_pct": -15.35,
           "best_baseline": "ses",
           "best_point_model_all": "lgbm_tweedie",
           "best_point_cost_all": 195812.1,
-          "savings_vs_best_point_all_pct": -29.54
+          "savings_vs_best_point_all_pct": -26.87
         },
         {
           "lead_time": 4,
@@ -9757,8 +9786,106 @@
           "savings_vs_best_point_all_pct": -50.18
         }
       ],
-      "best_baseline_counts": {
-        "ses": 168
+      "headline_selection": {
+        "selected_ex_post": true,
+        "selection_rule": "best quantile-policy model inside the pre-specified central cell (L=4, Cu/Co=9); the best-cell maximum across the 12-cell grid is reported separately",
+        "selected_cell": {
+          "lead_time": 4,
+          "cost_ratio": 9.0,
+          "model": "ses"
+        },
+        "n_cells": 12,
+        "n_cells_positive_savings": 12,
+        "savings_pct_across_cells": {
+          "min": 2.43,
+          "median": 17.495,
+          "max": 48.81
+        },
+        "per_cell_best_quantile": [
+          {
+            "lead_time": 2,
+            "cost_ratio": 1.0,
+            "model": "lgbm_quantile",
+            "savings_vs_best_simple_point_pct": 11.55
+          },
+          {
+            "lead_time": 2,
+            "cost_ratio": 3.0,
+            "model": "lgbm_tweedie",
+            "savings_vs_best_simple_point_pct": 2.43
+          },
+          {
+            "lead_time": 2,
+            "cost_ratio": 9.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 21.61
+          },
+          {
+            "lead_time": 2,
+            "cost_ratio": 19.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 39.31
+          },
+          {
+            "lead_time": 4,
+            "cost_ratio": 1.0,
+            "model": "lgbm_quantile",
+            "savings_vs_best_simple_point_pct": 13.38
+          },
+          {
+            "lead_time": 4,
+            "cost_ratio": 3.0,
+            "model": "lgbm_tweedie",
+            "savings_vs_best_simple_point_pct": 4.03
+          },
+          {
+            "lead_time": 4,
+            "cost_ratio": 9.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 23.82
+          },
+          {
+            "lead_time": 4,
+            "cost_ratio": 19.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 43.12
+          },
+          {
+            "lead_time": 8,
+            "cost_ratio": 1.0,
+            "model": "lgbm_tweedie",
+            "savings_vs_best_simple_point_pct": 8.09
+          },
+          {
+            "lead_time": 8,
+            "cost_ratio": 3.0,
+            "model": "lgbm_tweedie",
+            "savings_vs_best_simple_point_pct": 6.58
+          },
+          {
+            "lead_time": 8,
+            "cost_ratio": 9.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 29.66
+          },
+          {
+            "lead_time": 8,
+            "cost_ratio": 19.0,
+            "model": "ses",
+            "savings_vs_best_simple_point_pct": 48.81
+          }
+        ],
+        "note": "the CI is conditional on the selected cell; it does not cover the selection over models or cells"
+      },
+      "baseline_comparison": {
+        "best_baseline_counts": {
+          "ses": 168
+        },
+        "n_model_policy_lead_ratio_rows": 168,
+        "n_independent_cells": 12,
+        "cells_better": 12,
+        "rows_with_positive_quantile_savings": 54,
+        "definition": "independent cells are lead time x cost ratio (3 x 4); each cell contains 7 models x 2 policies = 14 rows"
       }
     }
   },
@@ -9773,24 +9900,24 @@
   ],
   "artifacts_bytes": {
     "data/processed/weekly_demand.csv": 43147038,
-    "data/processed/forecasts.parquet": 11975115,
-    "data/processed/residual_quantiles.csv": 11996345,
-    "outputs/tables/accuracy.csv": 5246,
-    "outputs/tables/accuracy_by_class.csv": 13151,
-    "outputs/tables/aggregate_error.csv": 5188,
+    "data/processed/forecasts.parquet": 11949320,
+    "data/processed/residual_quantiles.csv": 11996431,
+    "outputs/tables/accuracy.csv": 5241,
+    "outputs/tables/accuracy_by_class.csv": 13155,
+    "outputs/tables/aggregate_error.csv": 5190,
     "outputs/tables/backtest_origins.csv": 219,
-    "outputs/tables/calibration.csv": 14828,
-    "outputs/tables/cold_start.csv": 3437,
-    "outputs/tables/decision.csv": 26549,
+    "outputs/tables/calibration.csv": 14830,
+    "outputs/tables/cold_start.csv": 3433,
+    "outputs/tables/decision.csv": 26554,
     "outputs/tables/worst_skus.csv": 1631,
     "outputs/figures/fig1_intermittency.png": 67575,
     "outputs/figures/fig2_forecast_vs_actual.png": 180882,
-    "outputs/figures/fig3_calibration.png": 79936,
-    "outputs/figures/fig4_cost_vs_ratio.png": 277866,
-    "outputs/figures/fig5_error_by_class.png": 30086,
-    "outputs/figures/fig6_service_vs_inventory.png": 62349,
+    "outputs/figures/fig3_calibration.png": 81346,
+    "outputs/figures/fig4_cost_vs_ratio.png": 278224,
+    "outputs/figures/fig5_error_by_class.png": 30442,
+    "outputs/figures/fig6_service_vs_inventory.png": 62437,
     "outputs/figures/fig7_worst_skus.png": 270377,
-    "outputs/results.json": 274556
+    "outputs/results.json": 278986
   },
   "quality": {
     "origins_count": 3,
@@ -9808,13 +9935,19 @@
       2,
       4
     ],
-    "same_obs_all_models": true,
+    "same_sku_set_all_models": true,
+    "n_cells_checked": 24,
+    "n_skus": 3186,
+    "n_skus_by_cell": [
+      3186
+    ],
+    "mismatches": [],
     "tests": {
       "status": "passed",
-      "command": "python -m pytest -q tests/test_pipeline.py",
-      "n_passed": 19,
+      "command": "python -m pytest -q tests",
+      "n_passed": 24,
       "n_failed": 0,
-      "seconds": 5.0,
+      "seconds": 3.7,
       "log": "outputs/test_report.txt"
     }
   }

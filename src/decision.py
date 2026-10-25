@@ -77,11 +77,6 @@ def cumulative_targets(fc: pd.DataFrame, L: int) -> pd.DataFrame:
     return g
 
 
-def order_quantile(mu, zgrid, q):
-    z = np.interp(q, QGRID, zgrid)
-    return np.clip(mu + np.sqrt(np.maximum(mu, 0) + 0.25) * z, 0, None)
-
-
 def evaluate(g: pd.DataFrame, Q: np.ndarray, L: int, price_rows: np.ndarray,
              ratio: float) -> dict:
     y = g["y"].to_numpy()
@@ -109,9 +104,9 @@ def evaluate(g: pd.DataFrame, Q: np.ndarray, L: int, price_rows: np.ndarray,
     }
 
 
-def bootstrap_savings(cost_model: np.ndarray, cost_base: np.ndarray,
-                      codes: np.ndarray, idx: np.ndarray) -> tuple[float, float]:
-    """Percentile CI from a bootstrap that resamples *SKUs*, not rows.
+def _savings_replicates(cost_model: np.ndarray, cost_base: np.ndarray,
+                        codes: np.ndarray, idx: np.ndarray) -> np.ndarray:
+    """SKU-resampled savings replicates (fraction, not percent).
 
     Each SKU appears at three origins. Resampling rows would treat those three
     correlated observations as independent and understate the interval. Costs
@@ -124,8 +119,38 @@ def bootstrap_savings(cost_model: np.ndarray, cost_base: np.ndarray,
     assert n_sku == idx.shape[1], (
         f"bootstrap index has {idx.shape[1]} SKUs but cost arrays have {n_sku}; "
         "codes must be factorised to 0..n_sku-1")
-    s = 1 - cm[idx].sum(axis=1) / np.maximum(cb[idx].sum(axis=1), 1e-9)
+    return 1 - cm[idx].sum(axis=1) / np.maximum(cb[idx].sum(axis=1), 1e-9)
+
+
+def bootstrap_savings(cost_model: np.ndarray, cost_base: np.ndarray,
+                      codes: np.ndarray, idx: np.ndarray) -> tuple[float, float]:
+    """Percentile CI from a bootstrap that resamples *SKUs*, not rows."""
+    s = _savings_replicates(cost_model, cost_base, codes, idx)
     return float(np.percentile(s, 2.5) * 100), float(np.percentile(s, 97.5) * 100)
+
+
+def bootstrap_savings_pvalue_highres(cost_model: np.ndarray,
+                                     cost_base: np.ndarray,
+                                     codes: np.ndarray, rng: np.random.Generator,
+                                     n_boot: int,
+                                     chunk: int) -> tuple[float, int]:
+    """One-sided paired bootstrap test of H0: savings <= 0, high resolution.
+
+    Returns ``((1 + #{s* <= 0}) / (B + 1), #{s* <= 0})``. Resamples are drawn in
+    chunks of at most ``chunk`` SKU indices: a full ``B x n_sku`` index matrix
+    would be 10,000 x 3,186 int64 (~255 MB) in one allocation. The CI bootstrap
+    is a separate, smaller draw (``N_BOOTSTRAP``) so the interval is unchanged.
+    """
+    n_sku = int(codes.max()) + 1
+    n_le_zero = 0
+    done = 0
+    while done < n_boot:
+        b = min(chunk, n_boot - done)
+        idx = rng.integers(0, n_sku, size=(b, n_sku))
+        s = _savings_replicates(cost_model, cost_base, codes, idx)
+        n_le_zero += int(np.sum(s <= 0))
+        done += b
+    return float((1 + n_le_zero) / (n_boot + 1)), n_le_zero
 
 
 def run_decision(save: bool = True) -> dict:
@@ -142,11 +167,14 @@ def run_decision(save: bool = True) -> dict:
     prices = {int(o): price_vector(p, int(o)) for o in origin_list}
     price_full = price_vector(p)          # sensitivity only
     rng = np.random.default_rng(C.BOOTSTRAP_SEED)
+    # separate stream: the focal test must not shift the CI draws for other cells
+    rng_test = np.random.default_rng(C.BOOTSTRAP_SEED + 1)
 
     rows = []
     boot_rows = []
     worst = None
     focal = None
+    focal_test = None
 
     for L in C.LEAD_TIMES:
         g = cumulative_targets(fc, L)
@@ -252,6 +280,34 @@ def run_decision(save: bool = True) -> dict:
                     own = per_sku[key]
                     sav = 1 - own.sum() / max(base_cost.sum(), 1e-9)
                     lo, hi = bootstrap_savings(own, base_cost, codes, idx)
+                    if (L == 4 and ratio == 9 and model == "ses"
+                            and policy == "quantile"):
+                        p_one, n_le_zero = bootstrap_savings_pvalue_highres(
+                            own, base_cost, codes, rng_test,
+                            C.N_BOOTSTRAP_TEST, C.N_BOOTSTRAP_TEST_CHUNK)
+                        at_resolution = n_le_zero == 0
+                        focal_test = {
+                            "lead_time": L, "cost_ratio": ratio,
+                            "model": model, "policy": policy,
+                            "best_baseline": best_base[0],
+                            "null": "savings <= 0",
+                            "observed_savings_pct": round(float(sav) * 100, 2),
+                            "ci_low_pct": round(lo, 2),
+                            "ci_high_pct": round(hi, 2),
+                            "p_value_one_sided": p_one,
+                            "p_value_at_resolution": at_resolution,
+                            "p_value_upper_bound": (
+                                1 / (C.N_BOOTSTRAP_TEST + 1)
+                                if at_resolution else None),
+                            "n_replicates_le_zero": n_le_zero,
+                            "n_sku_resamples": int(C.N_BOOTSTRAP_TEST),
+                            "ci_resamples": int(C.N_BOOTSTRAP),
+                            "n_skus": int(n_sku),
+                            "test": ("paired SKU bootstrap: per-SKU costs summed "
+                                     "over origins, whole SKUs resampled with "
+                                     "replacement; test draws are independent of "
+                                     "the CI draws"),
+                        }
                     boot_rows.append({
                         "lead_time": L, "cost_ratio": ratio, "model": model,
                         "policy": policy,
@@ -317,6 +373,7 @@ def run_decision(save: bool = True) -> dict:
             "note": "absolute costs scale with the ratio and L; only the comparison is meaningful",
         },
         "n_sku_decisions_per_cell": int(len(g)),
+        "paired_test_central": focal_test,
         "oracle_cost": 0.0,
         "best_point_overall": (
             table[table["policy"] == "point"]

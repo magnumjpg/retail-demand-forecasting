@@ -1,0 +1,36 @@
+name: Full pipeline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      # config.py pins the archive sha256, so hashing it keys the cache to the
+      # verified dataset. data/raw is gitignored; only the manifest is committed.
+      - name: Cache raw UCI archive
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: uci-online-retail-ii-${{ hashFiles('src/config.py') }}
+
+      - name: Rebuild caches and artefacts
+        run: python src/run_all.py --skip-tests
+
+      - name: Run the full test suite
+        run: python -m pytest tests -q

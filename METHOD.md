@@ -200,6 +200,11 @@ meaningful. Costing the same central-case orders with the full-sample price inst
 pre-origin price changes the headline from 23.82% to 23.77% (vs SES) and from 18.62% to 18.41%
 (vs the cheapest point rule), so the no-look-ahead choice is not driving the result.
 
+The 23.82% is selected **ex post**: within the pre-specified central cell it is the best of the
+seven quantile models. Across the 12-cell grid the best quantile model saves between **2.43%**
+and **48.81%** (median **17.50%**). `headline.decision.headline_selection` records the selected
+cell, the per-cell values and the range; the interval below is conditional on that selection.
+
 ### 6.2 Policies
 
 For each origin, SKU and L:
@@ -219,8 +224,10 @@ demand. The fill rate is against recorded sales, not latent demand (no stockout 
 ### 6.3 Savings and uncertainty
 
 Savings are always relative to the **best simple point rule** among historical mean, seasonal
-naive, SES and Croston/SBA, at the same L and cost ratio. In every one of the 168
-model × policy × L × ratio cells that baseline is SES (point).
+naive, SES and Croston/SBA, at the same L and cost ratio. There are **168**
+model-policy-lead-ratio rows (7 models × 2 policies × 3 lead times × 4 ratios), but only **12**
+independent lead-time × cost-ratio cells; the best simple point baseline is SES in all 168 rows,
+and the best quantile policy beats it in all 12 cells (`headline.decision.baseline_comparison`).
 
 A second comparator is recorded for every cell: the **cheapest point rule in that cell** (the
 lowest-cost point policy among all seven models; LightGBM Tweedie at the central case,
@@ -231,12 +238,17 @@ a simple rule?" and "does it beat the cheapest point rule available in this cell
 README reports both, including the cells where the second answer is negative.
 
 The 95% CI is a bootstrap over SKUs: 500 resamples with replacement of the per-SKU cost vectors,
-recomputing the difference in mean cost. The per-SKU vectors are indexed by a compact `0…n_sku−1`
-code (not the global SKU index, which covers the whole universe); the function asserts that this
-code space matches the width of the bootstrap index, because a silent mismatch would drop SKUs or
-draw the wrong ones. The interval reflects cross-sectional heterogeneity, **not** uncertainty over
-time, model specification or cost assumptions. The cost assumptions are swept instead of
-bootstrapped.
+recomputing the difference in mean cost. At the selected central cell a one-sided paired test of
+H0: savings ≤ 0 uses a separate, higher-resolution bootstrap: **10,000** SKU resamples drawn in
+chunks of 1,000 so the index matrix stays bounded, with an independent random stream so the CI
+draws are unchanged (`decision.paired_test_central`). No replicate reached zero, so the result is
+reported as *p* < **0.0001** rather than as an exact floor value; the test records
+`p_value_at_resolution` and the bound `1/(B+1) = 1/10,001`. The per-SKU vectors are indexed by a
+compact `0…n_sku−1` code (not the global SKU index, which covers the whole universe); the function
+asserts that this code space matches the width of the bootstrap index, because a silent mismatch
+would drop SKUs or draw the wrong ones. The interval reflects cross-sectional heterogeneity,
+**not** uncertainty over time, model specification or cost assumptions. The cost assumptions are
+swept instead of bootstrapped.
 
 ### 6.4 Worst SKUs
 

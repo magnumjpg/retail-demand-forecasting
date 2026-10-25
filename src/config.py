@@ -62,7 +62,9 @@ MIN_TRAIN_WEEKS = 16              # a pseudo-origin needs this much history
 LEAD_TIMES = (2, 4, 8)            # weeks; also the aggregation window of demand
 COST_RATIOS = (1, 3, 9, 19)       # Cu / Co, exogenous assumption
 HOLD_COST_WEEK = 0.01             # Co = 1% of unit price per week held (assumption)
-N_BOOTSTRAP = 500
+N_BOOTSTRAP = 500                 # CI resamples (kept small; CI is wide anyway)
+N_BOOTSTRAP_TEST = 10_000         # focal p-value: resolution 1/(B+1) = 1e-4
+N_BOOTSTRAP_TEST_CHUNK = 1_000    # draw the test bootstrap in bounded chunks
 BOOTSTRAP_SEED = 20261024
 
 # ---------------------------------------------------------------- misc

@@ -69,7 +69,7 @@ At h=1, MASE:
 |---|---:|
 | SES | **0.819** |
 | historical mean | 1.319 |
-| Croston/SBA | 1.569 |
+| Croston/SBA | 1.692 |
 | seasonal naive | 1.723 |
 
 Two things were already clear:
@@ -232,9 +232,60 @@ The audit also forced a wording fix: LightGBM median is **not** the worst aggreg
 model; its 40.05% WAPE is second-worst, behind seasonal naive's 71.09%. The earlier
 sentence was a real overclaim, not a rounding difference.
 
-After the fixes the full cached run took 146 s, the suite grew to **19 tests**, and
+After the fixes the full cached run took 146 s, the suite grew to **19 tests** (24 after
+Session 12), and
 the central saving moved from 23.88% to 23.82% (the pre-origin price and complete
 windows), with the ranking unchanged.
+
+---
+
+## Session 11 — hardening audit: one real model bug and three traceability fixes
+
+A third audit checked every headline claim against the code. Four findings:
+
+1. **Croston/SBA interval bug.** At the first sale the code set `p = 1` but did not reset the
+   periods-since-last-sale counter, so leading zero weeks were added to the first observed gap.
+   The smoothed interval was too large and the forecast biased down. Fixed by resetting `q` at the
+   first sale, with a regression test (leading zeros must give the same forecast as the same sales
+   without them) and an all-zero fallback test. Croston h=1 MASE is now **1.692** and pooled WAPE
+   **9.99%**; it remains worse than the historical mean and the ranking is unchanged.
+2. **"168 of 168".** 168 is 7 models × 2 policies × 3 lead times × 4 ratios; the independent cells
+   are 12. The docs now say that, and `results.json` stores `n_independent_cells` and
+   `cells_better` (12).
+3. **Customer-ID share.** 22.77% is the *line-item* share. The invoice share is 8,752 / 53,628 =
+   **16.32%**; both are now stored and the docs use the right unit.
+4. **Ex-post headline.** The 23.82% is the best of seven quantile models in the central cell.
+   `headline_selection` records the 12-cell range (2.43–48.81%, median 17.50%), the chosen cell
+   and `selected_ex_post: true`; a one-sided paired SKU bootstrap (10,000 resamples, drawn in
+   chunks of 1,000) gives *p* < 0.0001 for H0: savings ≤ 0 at that cell, with no replicate
+   reaching zero. The vacuous `same_obs_all_models` check was replaced by a real
+   SKU-set comparison (24 origin × horizon cells, 3,186 SKUs, now tested).
+
+The 43 MB `weekly_demand.csv` was removed from the git index and added to `.gitignore`; a fresh
+clone must run the pipeline. After the changes the cached run took 119 s and the suite counted
+**23 tests** (24 after Session 12).
+
+---
+
+## Session 12 — p-value resolution, provenance, CI coverage
+
+A fourth review checked the regenerated artefacts. Three follow-ups:
+
+1. **P-value on the resolution floor.** The 500-resample test reported *p* = 0.001996 =
+   1/501, i.e. no replicate reached zero: an artefact of the resolution, not an exact
+   probability. The focal test now draws **10,000** SKU resamples in chunks of 1,000 on an
+   independent random stream; the CI keeps its 500 resamples, so the interval is unchanged.
+   No replicate reached zero, so the docs report *p* < 0.0001 and `results.json` carries
+   `p_value_at_resolution`, `p_value_upper_bound` (1/10,001) and the count of replicates ≤ 0.
+2. **Provenance.** `meta.git_commit` named `HEAD` while the artefacts came from a dirty tree.
+   `meta.git_dirty` now records that, and `meta.git_state` reads "working tree on top of
+   <hash>"; a clean release run reads "clean tree at <hash>".
+3. **CI coverage.** Push/PR still runs the cache-free suite. A manual `full-pipeline.yml`
+   (`workflow_dispatch`) installs requirements, restores or downloads the UCI archive, runs
+   `python src/run_all.py --skip-tests`, then the full suite.
+
+After these changes the cached run took 102 s (meta total 97.5 s) and the suite counted
+**24 tests**.
 
 ---
 

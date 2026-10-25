@@ -203,6 +203,14 @@ def clean(force: bool = False) -> dict:
 
     neg_noncancel = int(audit[4]["rows_dropped"])  # Quantity<=0 after cancellation split
 
+    # Customer-ID coverage is reported on two different units.  The line-item
+    # share is what the raw file shows; the invoice share is the one that
+    # answers "how many invoices have no customer attached?".
+    cid_missing = raw["Customer ID"].isna()
+    invoice_missing = cid_missing.groupby(raw["Invoice"]).all()
+    n_invoices_raw = int(len(invoice_missing))
+    n_invoices_no_cid = int(invoice_missing.sum())
+
     n_weeks = len(weeks)
     origin0 = n_weeks + ORIGIN_OFFSETS[0]
     wide = (panel.pivot(index="StockCode", columns="week", values="demand")
@@ -255,7 +263,18 @@ def clean(force: bool = False) -> dict:
             "largest_invoice_units": float(clean_inv["units"].iat[0]),
             "top_1pct_invoice_share_units_incl_cancellations": round(float(all_inv.head(max(1, int(np.ceil(len(all_inv) * 0.01)))).sum() / all_inv.sum()), 4),
         },
-        "share_orders_without_customer_id": round(float(raw["Customer ID"].isna().mean()), 4),
+        "share_line_items_without_customer_id": round(float(cid_missing.mean()), 4),
+        # deprecated alias kept for backward compatibility: this has always
+        # been the line-item share, not the invoice share
+        "share_orders_without_customer_id": round(float(cid_missing.mean()), 4),
+        "share_invoices_without_customer_id": round(
+            float(n_invoices_no_cid / n_invoices_raw), 4),
+        "customer_id_coverage": {
+            "line_items_total": int(len(raw)),
+            "line_items_without_customer_id": int(cid_missing.sum()),
+            "invoices_total": n_invoices_raw,
+            "invoices_without_customer_id": n_invoices_no_cid,
+        },
         "audit": audit,
         "assumptions": [
             "Weeks are ISO weeks (Mon-Sun). The first and last calendar weeks are partial and dropped.",
