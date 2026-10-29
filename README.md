@@ -4,7 +4,7 @@
 
 [Resumen en español](#resumen-en-español) · [Method](METHOD.md) · [Limitations](LIMITATIONS.md) · [Decisions](DECISIONS.md)
 
-**Calibrated quantile forecasts cut total inventory cost by 23.82% in the central case — and lose to a point rule when holding costs as much as a stockout.**
+**Calibrated quantile forecasts cut total inventory cost by 23.82% in the central case - and lose to a point rule when holding costs as much as a stockout.**
 
 *UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins · 24 tests*
 
@@ -18,7 +18,7 @@
 - **Headline:** at the central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95% bootstrap CI **21.20–26.18%**, conditional on that cell).
 - **Caveat:** the reported model is selected ex post inside the central cell (a reporting convention, not the best cell); the best quantile model per cell ranges from **2.43%** to **48.81%**, and at `Cu/Co=1` the SES quantile rule loses to the cheapest point rule.
 
-This is a decision memo, not a leaderboard entry. It asks whether calibrated probabilistic
+This study assesses whether calibrated probabilistic forecasts reduce inventory cost under a newsvendor replenishment policy. It asks whether calibrated probabilistic
 forecasts reduce inventory cost under a newsvendor policy, and where the approach breaks.
 Every number below is a field of [`outputs/results.json`](outputs/results.json); the file is
 assembled by `src/run_all.py` from the pipeline artefacts, never typed into the docs by hand.
@@ -145,7 +145,7 @@ in [LIMITATIONS.md](LIMITATIONS.md).
 | intermittent | 0.978 | 1.173 | **0.786** | 2.628 |
 
 LightGBM median wins every class. LightGBM Tweedie loses to SES in every class. Croston/SBA is
-the worst model in the intermittent class — the case it is designed for — which is a legitimate
+the worst model in the intermittent class - the case it is designed for - which is a legitimate
 finding, not a bug: SBA smooths towards a stable inter-arrival rate that this retailer does not
 have. Cold-start SKUs (12–25 positive weeks at the first origin, **880** SKUs) are shown
 separately: LightGBM median **0.558** vs SES **0.818** vs Croston **3.689**; SES is essentially
@@ -163,7 +163,7 @@ the scale finite at μ = 0.
 | Empirical coverage of P10–P90 | **0.778 – 0.806** | 0.80 |
 | `P(y < q10)` | **0.084 – 0.135** | 0.10 |
 | `P(y ≤ q90)` | **0.888 – 0.914** | 0.90 |
-| `P(y ≤ q10)` (descriptive only) | 0.521 – 0.581 | — |
+| `P(y ≤ q10)` (descriptive only) | 0.521 – 0.581 | - |
 
 The last row is not a failure: **46.9%** of demands are exactly zero, so the CDF has a large
 atom. If `q10` is also zero, then `P(y ≤ q10)` includes the whole atom; the meaningful lower-tail
@@ -172,7 +172,7 @@ longer horizons it becomes over-covered (h=2: 0.792–0.874; h=4: 0.798–0.914)
 conformal grid widens with horizon while the zero atom does not move. Figure
 `fig3_calibration.png` plots central-interval coverage curves.
 
-![Figure 3 — Interval calibration](outputs/figures/fig3_calibration.png)
+![Figure 3 - Interval calibration](outputs/figures/fig3_calibration.png)
 
 *Figure 3. Empirical coverage of central prediction intervals at h = 1, all origins. The diagonal is perfect calibration; most models sit above it, so the intervals are conservative rather than overconfident. Source: `outputs/figures/fig3_calibration.png`.*
 
@@ -185,9 +185,9 @@ information), winsorised at p99.5. **These are assumptions, swept explicitly; th
 level is not a claim about the company.** Two comparators are reported, because they answer
 different questions:
 
-- **vs best simple point rule** — SES in every cell; this is what the 500-rep bootstrap over
+- **vs best simple point rule** - SES in every cell; this is what the 500-rep bootstrap over
   SKUs estimates, so it carries a CI.
-- **vs cheapest point rule in each cell** — the lowest-cost point policy among all seven models.
+- **vs cheapest point rule in each cell** - the lowest-cost point policy among all seven models.
   That rule is LightGBM-Tweedie at the central case and LightGBM-median at `Cu/Co = 1`, so the
   label does not name one model for the whole grid. No CI is claimed for this difference; the
   bootstrap is defined against SES.
@@ -203,14 +203,14 @@ different questions:
 | LightGBM Tweedie point | 6.39% | 3.41 – 9.38 | 0.00% | 0.731 | 32.4 | 1.24 |
 | Croston/SBA + conformal | 4.36% | 0.23 – 8.31 | −2.17% | 0.801 | 92.8 | 3.55 |
 | Historical mean + conformal | −1.88% | −7.03 – 2.92 | −8.84% | 0.780 | 95.8 | 3.67 |
-| SES point (baseline) | 0.00% | — | −6.82% | 0.710 | 29.9 | 1.15 |
+| SES point (baseline) | 0.00% | - | −6.82% | 0.710 | 29.9 | 1.15 |
 | LightGBM median point | −39.01% | −43.67 – −35.07 | −48.49% | 0.547 | 8.0 | 0.31 |
 | Seasonal naive + conformal | −129.84% | −151.48 – −111.72 | −145.53% | 0.845 | 408.0 | 15.62 |
 
 At the central case the quantile policy raises fill from **71.0%** (SES point) to **84.6%** and
 cuts stockouts, at the cost of more inventory. Holding cost is 66,435.28 and stockout cost
 92,918.61 of the SES-quantile total 159,353.89; under this cost ratio the stockout side still
-dominates. Against the cheapest point rule in the cell — LightGBM Tweedie point — the SES
+dominates. Against the cheapest point rule in the cell - LightGBM Tweedie point - the SES
 quantile still saves **18.62%**. Note that ordering the **median** (LightGBM median point) has a
 fill rate of only **54.7%** and destroys value: a good MASE is not a good ordering rule.
 
@@ -241,7 +241,7 @@ L=2 **39.31%** [36.35, 42.56] / **33.99%**, L=4 **43.12%** [39.89, 45.97] / **38
 **48.81%** [46.36, 51.18] / **46.96%**. Higher lead times need more cover, so a distribution matters
 more; they also carry more inventory and a larger absolute cost.
 
-![Figure 4 — Decision value versus cost ratio](outputs/figures/fig4_cost_vs_ratio.png)
+![Figure 4 - Decision value versus cost ratio](outputs/figures/fig4_cost_vs_ratio.png)
 
 *Figure 4. Cost saving of each quantile policy against the cost ratio Cu/Co, for lead times of 2, 4 and 8 weeks. The top row compares with the best simple point rule (SES); the bottom row compares with the cheapest point rule in each cell. Shaded bands are 95% bootstrap intervals over SKUs. Source: `outputs/figures/fig4_cost_vs_ratio.png`.*
 
@@ -273,7 +273,7 @@ sample (3,482 SKUs pass ≥8, 3,186 pass ≥12 at the first origin). Among those
 the median's under-forecasting is most dangerous for ordering; the backtest does not measure
 the cost of cold-start SKUs separately, which is a limitation.
 
-![Figure 7 — The twenty costliest SKUs](outputs/figures/fig7_worst_skus.png)
+![Figure 7 - The twenty costliest SKUs](outputs/figures/fig7_worst_skus.png)
 
 *Figure 7. Weekly demand histories of the 20 SKUs with the largest newsvendor cost at the central case (L = 4, Cu/Co = 9, LightGBM quantile policy). Source: `outputs/figures/fig7_worst_skus.png`.*
 
@@ -388,7 +388,7 @@ across models in all 24 origin × horizon cells (3,186 SKUs per cell); **24 test
   LIMITATIONS.md            what the design cannot answer
   DECISIONS.md              decisions, alternatives, blockers
   ANALYSIS_LOG.md           chronological record, including the failures
-  RED_TEAM.md               hostile objections, answered or conceded
+  RED_TEAM.md               robustness checks, sensitivity tests, boundary conditions
   requirements.txt
   src/
     config.py               paths, filters, origins, cost assumptions

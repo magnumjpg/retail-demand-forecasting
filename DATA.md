@@ -109,7 +109,7 @@ Two different samples are used, and the difference is deliberate:
 | ≥ 12 positive weeks | 3,645 | **3,186** |
 | ≥ 26 positive weeks | 2,753 | 2,286 |
 | Zero-demand share | 54.52% | **46.93%** |
-| Median positive weeks per SKU | 41 | — |
+| Median positive weeks per SKU | 41 | - |
 
 - The **universe** written to `weekly_demand.csv` is every SKU with ≥8 positive weeks in the full
   104-week sample. This keeps the shipped panel useful for alternative splits while excluding

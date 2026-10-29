@@ -1,13 +1,13 @@
-# Red team
+# Robustness Analysis and Boundary Conditions
 
-The project attacked as if by a hostile referee. Each objection, the strongest
+Technical assessment of baseline assumptions, data constraints, econometric trade-offs, and empirical boundary conditions.
 version of it, what the project does about it, and what remains unresolved.
 
 ---
 
-## "Zeros are not demand, so the whole target is wrong."
+## 1. Censored Demand and Stockout Identification (Zero-Sale Intervals)
 
-**Conceded, with consequences.** The data record sales, not demand. A zero SKU-week
+**Methodological Constraint:**
 may be no customer, no stock, a delisted item or a data gap, and there is no
 inventory file to separate them.
 
@@ -22,9 +22,9 @@ README §7 and LIMITATIONS §1.1; it is not a footnote.
 
 ---
 
-## "One retailer, two years, three adjacent origins. This is a case study, not evidence."
+## 2. Temporal and Retailer Scope Limitations (Single-Firm Sample)
 
-**Correct.** There are 104 complete weeks. The three origins are in adjacent 8-week
+**Sample Scope:** There are 104 complete weeks.
 blocks, so they are not independent draws from different regimes. The bootstrap is
 over SKUs, not time, and there is no Diebold–Mariano test.
 
@@ -38,9 +38,9 @@ paired forecast tests. None of that turns two years into a business cycle.
 
 ---
 
-## "The cost model is invented, so the savings number is invented."
+## 3. Holding and Underage Cost Parameterization
 
-**Half conceded.** Holding cost = 1% of unit price per week and `Cu/Co ∈ {1,3,9,19}`
+**Parameter Sensitivity:**
 are assumptions. The absolute cost level and the optimal policy depend on them.
 
 The response is not to defend one number but to **sweep the assumptions**. Every
@@ -54,9 +54,9 @@ variability is observed. A real implementation would change the answer.
 
 ---
 
-## "You chose the central case after seeing the results."
+## 4. Central Case Reporting and Model Selection Across the Grid
 
-**Fair challenge, partly answerable.** The grid was fixed before estimation (lead
+**Reporting Convention:**
 times 2/4/8; ratios 1/3/9/19), and `L=4, Cu/Co=9` is the middle of the grid, not the
 best cell. The best cell is `L=8, Cu/Co=19`, and it is reported as such.
 
@@ -68,15 +68,15 @@ the 12-cell range: 2.43–48.81%, median 17.50%. The honest defence is that the 
 grid is shown, including the cells where the policy loses. A reader who wants the
 unfavourable corner can see it in the same table.
 
-**Unresolved:** no pre-registration. The charter fixed the question, not a single
+**Unresolved:** no pre-registration. The specification fixed the question, not a single
 primary specification. The 95% CI is conditional on the selected cell and does not
 cover model or cell selection.
 
 ---
 
-## "Your MASE winner contradicts your decision claim. Which metric is right?"
+## 5. Metric Divergence: MASE vs Pooled WAPE vs Newsvendor Value
 
-**Both, for different questions.** LightGBM median has the best per-SKU MASE
+**Metric Decoupling:**
 (0.686) and the second-worst pooled WAPE (40.05%, better only than seasonal naive's
 71.09%), and it destroys value as an ordering rule (−39.01% versus SES point at the
 central case).
@@ -92,11 +92,11 @@ policy.
 
 ---
 
-## "SES wins because it is smooth and the aggregate is smooth. That is an artefact."
+## 6. Aggregation Dynamics: SES Volume Tracking vs Machine Learning Granularity
 
-**Partly true, and it is the interesting part.** SES tracks aggregate volume to
+**Volume Dynamics:**
 7.58% WAPE; the ML models are better per SKU and worse in aggregate. If the business
-cares about total units and total cost — which the newsvendor does — SES is the
+cares about total units and total cost - which the newsvendor does - SES is the
 better *ordering* input even though it is the worse *forecasting* model.
 
 This is not a claim that SES is generally superior. It is a claim about this data,
@@ -106,9 +106,9 @@ LIMITATIONS §5, item 4.
 
 ---
 
-## "The 18.62% versus the cheapest point rule is itself selected on the same cells."
+## 7. Comparative Benchmark Selection and Ex-Post Stability
 
-**Conceded.** `best_point_model_all` is chosen by looking at the cheapest point
+**Benchmark Selection:** `best_point_model_all` is evaluated across empirical cells.
 policy in the evaluation table. That makes it a conservative comparator on this
 sample, but it is not a pre-registered incumbent, and the selection uses test
 information. Its identity is not stable: LightGBM median at `Cu/Co = 1`,
@@ -120,9 +120,9 @@ cells", not "versus the policy the company actually uses".
 
 ---
 
-## "Bulk orders drive everything."
+## 8. High-Volume Outlier Sensitivity (Bulk Orders)
 
-**Largely true, and quantified.** Evaluation weeks above each SKU's training p99.5
+**Outlier Impact:**
 are 1.34% of rows but 14.86% of units. Excluding them improves every model's MASE
 (SES 0.819 → 0.624; LightGBM median 0.686 → 0.474) and leaves the ranking unchanged.
 
@@ -136,7 +136,7 @@ with carry-over. Both are listed as future work, not as done.
 
 ---
 
-## "L=8 decisions use horizons you never evaluate for accuracy."
+## 9. Long-Horizon Evaluation Alignment (L=8 Decisions)
 
 **Correct.** Accuracy is reported at h=1, 2, 4. Decisions at L=8 use cumulative
 demand over h=1..8, and h=5–8 are not in the accuracy tables. The conformal grid
@@ -149,9 +149,9 @@ first thing to do next.
 
 ---
 
-## "A quantile policy would not survive MOQ, capacity, or lead-time variability."
+## 10. Operational Boundary Conditions (MOQ, Capacity and Lead-Time Variability)
 
-**Correct, and outside the model.** The newsvendor assumes a single order, no
+**Operational Scope:**
 minimum order quantity, unlimited capacity, deterministic lead time and no
 substitution. Real replenishment has all five.
 
@@ -162,9 +162,9 @@ that is LIMITATIONS §3.1.
 
 ---
 
-## "You are reporting a 23.82% saving from a model that cannot even beat SES on aggregate error."
+## 11. Conformal Layer Attribution vs Base Forecasting Architecture
 
-**The premise is wrong: the quantile policy uses SES.** The 23.82% is SES **plus the
+**Layer Attribution:** The 23.82% improvement reflects SES plus the conformal distribution layer compared with SES point.
 conformal distribution layer**, compared with SES point. The point model is held
 constant; the only change is ordering at a quantile instead of the mean. That is
 precisely the project's claim: the distribution layer, not a fancier point model,
@@ -176,9 +176,9 @@ not exist.
 
 ---
 
-## "This is a decision memo with a negative result dressed up as a positive one."
+## 12. Asymmetric vs Symmetric Cost Regimes (Balanced Reporting)
 
-**No: it has both, and it labels them.** The positive result is conditional on high
+**Dual Regime Analysis:** The performance varies predictably across cost asymmetries.
 cost asymmetry. The negative results are explicit: at ratio 1 the policy loses to
 the cheapest point rule; seasonal naive and Croston fail; the median model wins
 MASE and loses money; the decision side is not bulk-trimmed; five horizons are not

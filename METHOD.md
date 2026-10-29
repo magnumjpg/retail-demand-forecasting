@@ -9,7 +9,7 @@ assumptions. The code is the final authority: `src/features.py`, `src/models.py`
 - **Unit of analysis:** SKU × ISO week.
 - **Target:** units shipped in the week (sum of positive `Quantity`), never revenue.
 - **Forecast origins:** 2011-05-30, 2011-07-25, 2011-09-19 (panel indices 77, 85, 93).
-- **Horizons:** 1–8 weeks ahead for every origin. Accuracy is reported at h = 1, 2, 4 (charter);
+- **Horizons:** 1–8 weeks ahead for every origin. Accuracy is reported at h = 1, 2, 4 (specification benchmark);
   the decision analysis uses cumulative windows L = 2, 4, 8.
 - **Training window:** weeks 0…`origin − 13`. The 13-week block immediately before the origin is
   reserved for conformal calibration. No target after the origin is used in fitting or
@@ -233,8 +233,8 @@ A second comparator is recorded for every cell: the **cheapest point rule in tha
 lowest-cost point policy among all seven models; LightGBM Tweedie at the central case,
 LightGBM median at `Cu/Co = 1`). The saving against it is reported without a CI. The bootstrap
 below is defined against SES point, so attaching that interval to a different difference would
-be a fabricated CI. The two benchmarks answer different questions — "does the distribution beat
-a simple rule?" and "does it beat the cheapest point rule available in this cell?" — and the
+be a fabricated CI. The two benchmarks answer different questions - "does the distribution beat
+a simple rule?" and "does it beat the cheapest point rule available in this cell?" - and the
 README reports both, including the cells where the second answer is negative.
 
 The 95% CI is a bootstrap over SKUs: 500 resamples with replacement of the per-SKU cost vectors,

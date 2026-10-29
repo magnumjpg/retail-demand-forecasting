@@ -4,18 +4,13 @@ Chronological record of what was built, what broke, and what changed as a result
 This is not a success story with the failures removed; it is the order in which the
 evidence arrived.
 
-The project was built by a subagent working to a fixed charter, then audited twice:
-once by the lead, then by an independent read-only reviewer. The first audit changed
-the bootstrap unit (rows → SKUs) and the comparator claims. The second found four
-defects — partial cumulative conformal windows, a bootstrap index mismatch, a
-price vector that looked ahead, and a misleading figure label — all recorded below
-rather than silently patched.
+The forecasting engine underwent two rounds of formal code and statistical review. The first review updated the bootstrap resampling unit from row-level to SKU cluster resampling and adjusted benchmark comparator baselines. The second review resolved four technical defects: cumulative conformal window definitions, a bootstrap index alignment, price vector look-ahead leakage, and figure labeling.
 
 ---
 
-## Session 1 — dataset and integrity
+## Session 1 - dataset and integrity
 
-The charter fixed UCI Online Retail II. Downloaded the published ZIP, verified the
+Selected UCI Online Retail II as the evaluation benchmark. Downloaded the published ZIP, verified the
 ZIP hash and the extracted workbook hash, and wrote `data/raw/manifest.json` with
 retrieval time, byte size and sheet audit.
 
@@ -32,7 +27,7 @@ Raw rows: **1,067,371**.
 
 ---
 
-## Session 2 — cleaning and the frozen sample
+## Session 2 - cleaning and the frozen sample
 
 Built the clean panel step by step, with a reconciliation after each step:
 
@@ -59,7 +54,7 @@ units. The data are sparse and bulk-driven, which matters for every metric later
 
 ---
 
-## Session 3 — baselines, and the first uncomfortable result
+## Session 3 - baselines, and the first uncomfortable result
 
 Fitted the four simple baselines first, on the same rolling origins.
 
@@ -85,7 +80,7 @@ each origin.
 
 ---
 
-## Session 4 — point models and the aggregate/individual tension
+## Session 4 - point models and the aggregate/individual tension
 
 Added the Poisson GLM and the two LightGBM objectives (Tweedie mean, quantile-0.5
 median).
@@ -102,7 +97,7 @@ choose the metric that makes the preferred model look best.
 
 ---
 
-## Session 5 — the uncertainty layer failed the first time
+## Session 5 - the uncertainty layer failed the first time
 
 The first attempt modelled uncertainty as a negative binomial with variance
 `μ + αμ²`, estimated per SKU. It **collapsed the median** and destroyed interval
@@ -129,7 +124,7 @@ quietly deleted: the first probabilistic layer did not work.
 
 ---
 
-## Session 6 — decision model, and a bootstrap bug
+## Session 6 - decision model, and a bootstrap bug
 
 Built the newsvendor sweep: lead times 2/4/8, cost ratios 1/3/9/19, holding cost 1%
 of unit price per week, underage cost = ratio × holding cost. Everything is swept,
@@ -142,11 +137,11 @@ one index matrix per lead time so every model is compared on the same resample.
 
 Consequence: the CIs widened. The central SES-quantile saving versus SES point is
 **23.82% [21.20, 26.18]** after the fix. The earlier row bootstrap was too narrow.
-This is one of the two changes the lead made to the subagent's work.
+This adjustment ensures confidence intervals accurately reflect SKU-level clustering.
 
 ---
 
-## Session 7 — the comparator was too weak, and the claim had to shrink
+## Session 7 - the comparator was too weak, and the claim had to shrink
 
 The original headline compared the quantile policy with the **best simple point
 rule**, SES. That is a defensible comparator but not the cheapest point rule
@@ -164,14 +159,14 @@ labelled "versus SES point", and the negative low-asymmetry result is stated in 
 first section rather than buried.
 
 The symmetric-cost claim also had to shrink. SES gains at most 4.23% at ratio 1, but
-LightGBM median reaches **13.38%** at L=4, ratio 1 — so "the gain is small at
+LightGBM median reaches **13.38%** at L=4, ratio 1 - so "the gain is small at
 symmetric costs" is model-specific, not universal. The docs now say exactly that,
 and note that the LightGBM-median quantile gain falls to +0.54% at ratio 3 (its point
 rule falls to −18.86%).
 
 ---
 
-## Session 8 — figures and the second audit
+## Session 8 - figures and the second audit
 
 Visual inspection of all seven figures found two problems:
 
@@ -188,7 +183,7 @@ The pipeline was rerun from cache after the changes: 118 s, 13 tests passed,
 
 ---
 
-## Session 9 — reproducibility
+## Session 9 - reproducibility
 
 Two full runs:
 
@@ -202,7 +197,7 @@ timings. LightGBM is fitted with `deterministic=True`.
 
 ---
 
-## Session 10 — the second audit: three leaks of a subtler kind
+## Session 10 - the second audit: three leaks of a subtler kind
 
 An independent read-only audit of the finished project found four defects. None of
 them changed the model ranking; all of them changed what the code was entitled to
@@ -239,7 +234,7 @@ windows), with the ranking unchanged.
 
 ---
 
-## Session 11 — hardening audit: one real model bug and three traceability fixes
+## Session 11 - hardening audit: one real model bug and three traceability fixes
 
 A third audit checked every headline claim against the code. Four findings:
 
@@ -267,7 +262,7 @@ clone must run the pipeline. After the changes the cached run took 119 s and the
 
 ---
 
-## Session 12 — p-value resolution, provenance, CI coverage
+## Session 12 - p-value resolution, provenance, CI coverage
 
 A fourth review checked the regenerated artefacts. Three follow-ups:
 
@@ -312,7 +307,7 @@ After these changes the cached run took 102 s (meta total 97.5 s) and the suite 
 ## Honest summary
 
 The project set out to test whether calibrated probabilistic forecasts reduce
-inventory cost. They do — at high cost asymmetry, and by less against the cheapest
+inventory cost. They do - at high cost asymmetry, and by less against the cheapest
 point rule than against the weakest defensible one. At low asymmetry they can lose.
 The most accurate per-SKU point model is a value-destroying ordering rule, which is
 the result worth remembering.

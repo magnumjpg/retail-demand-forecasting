@@ -6,9 +6,9 @@ were rejected, and the consequence. Entries are numbered for reference from `MET
 
 ---
 
-## D1 — Use UCI Online Retail II, verified by hash, with a local manifest
+## D1 - Use UCI Online Retail II, verified by hash, with a local manifest
 
-**Context.** The charter fixes the dataset: two yearly sheets of a UK online retailer,
+**Context.** The specification fixes the dataset: two yearly sheets of a UK online retailer,
 2009-12-01 → 2011-12-09.
 
 **Decision.** Download the published zip from
@@ -27,7 +27,7 @@ committed. A fresh clone needs network access or a manually placed workbook.
 
 ---
 
-## D2 — De-duplicate the sheet overlap before any aggregation
+## D2 - De-duplicate the sheet overlap before any aggregation
 
 **Context.** The sheets overlap on 2010-12-01 → 2010-12-09.
 
@@ -46,7 +46,7 @@ visible.
 
 ---
 
-## D3 — Cancellations are separated, never netted
+## D3 - Cancellations are separated, never netted
 
 **Context.** `Invoice` values starting with `C` are returns. 19,104 rows carry −476,819 units and
 −1,462,050.61 revenue.
@@ -65,7 +65,7 @@ volume. A net-demand variant is cheap to add because the cancellation block is a
 
 ---
 
-## D4 — Drop non-product codes with an explicit list and a strict regex
+## D4 - Drop non-product codes with an explicit list and a strict regex
 
 **Context.** Postage, manual adjustments, samples, gifts and bank charges appear as stock codes and
 would otherwise become "SKUs".
@@ -85,7 +85,7 @@ logged with rows, units and revenue rather than applied silently.
 
 ---
 
-## D5 — Keep only complete ISO weeks
+## D5 - Keep only complete ISO weeks
 
 **Context.** The data starts on Tuesday 2009-12-01 and ends on Friday 2011-12-09. The first and last
 calendar weeks are partial.
@@ -104,9 +104,9 @@ after the first version of the audit failed to reconcile by exactly the partial-
 
 ---
 
-## D6 — Two nested samples: ≥8 positive weeks for the panel, ≥12 pre-origin for modelling
+## D6 - Two nested samples: ≥8 positive weeks for the panel, ≥12 pre-origin for modelling
 
-**Context.** The charter asks to test N = 8, 12, 26. A single threshold cannot serve both "a useful
+**Context.** The specification asks to test N = 8, 12, 26. A single threshold cannot serve both "a useful
 shipped panel" and "enough history to fit a model".
 
 **Decision.**
@@ -127,9 +127,9 @@ origin). The threshold trade-off is explicit, not hidden in an average.
 
 ---
 
-## D7 — Three rolling origins inside the last 26 weeks, not a random split
+## D7 - Three rolling origins inside the last 26 weeks, not a random split
 
-**Context.** The charter requires a rolling-origin backtest, at least three origins, and no random
+**Context.** The specification requires a rolling-origin backtest, at least three origins, and no random
 split.
 
 **Decision.** Origins at panel indices **77, 85, 93** = **2011-05-30**, **2011-07-25**,
@@ -138,8 +138,8 @@ separately at each origin on weeks ≤ `origin − 13`; the 13 weeks before the 
 conformal calibration window. No target after the origin is used in fitting or calibration.
 
 **Alternatives.** A single 26-week holdout (no rolling evidence, one path); random K-fold (leaks
-future into past and violates the charter); weekly origins (more compute, highly correlated
-overlapping targets); origins at 78/91/104 (the charter's illustrative numbers do not leave a full
+future into past and violates the specification); weekly origins (more compute, highly correlated
+overlapping targets); origins at 78/91/104 (the specification's illustrative numbers do not leave a full
 h=8 target window for the last origin).
 
 **Consequence.** Each origin contributes 3,186 SKU forecasts per horizon → 9,558 observations per
@@ -148,9 +148,9 @@ SKUs, not time. This is stated in LIMITATIONS §2.1.
 
 ---
 
-## D8 — Forecast h = 1…8; report accuracy at 1, 2, 4; decide at L = 2, 4, 8
+## D8 - Forecast h = 1…8; report accuracy at 1, 2, 4; decide at L = 2, 4, 8
 
-**Context.** The charter asks for accuracy at 1/2/4 weeks and a decision sweep with lead times
+**Context.** The specification asks for accuracy at 1/2/4 weeks and a decision sweep with lead times
 2/4/8.
 
 **Decision.** Generate forecasts for every h = 1…8. Report MAE/RMSE/MASE/pinball/coverage at
@@ -158,7 +158,7 @@ h = 1, 2, 4. Run the newsvendor at cumulative L = 2, 4, 8, using a separate conf
 each L. The central decision case is L = 4, `Cu/Co = 9`.
 
 **Alternatives.** Only h = 1, 2, 4 and approximate L = 8 by summing marginal quantiles (ignores
-within-window dependence and would understate the upper tail); only L = 2, 4 (drops the charter's
+within-window dependence and would understate the upper tail); only L = 2, 4 (drops the specification's
 most asymmetric cell); a single horizon for both accuracy and decisions (loses the distinction
 between forecast skill and decision value).
 
@@ -168,9 +168,9 @@ depend on it.
 
 ---
 
-## D9 — Four simple baselines, each with a stated configuration
+## D9 - Four simple baselines, each with a stated configuration
 
-**Context.** The charter names historical mean, seasonal naive, SES and Croston/SBA.
+**Context.** The specification names historical mean, seasonal naive, SES and Croston/SBA.
 
 **Decision.**
 - Mean: `mean(y_0…y_O)`, constant across horizons.
@@ -182,7 +182,7 @@ depend on it.
 
 **Alternatives.** A per-SKU MLE/optimised SES (slower, another overfitting channel on 65–93
 observations); a single global α (ignores heterogeneity); Croston without SBA (known positive
-bias); Theta/ETS (not in the charter, and a larger baseline family would need its own tuning).
+bias); Theta/ETS (not in the specification, and a larger baseline family would need its own tuning).
 
 **Consequence.** SES is deliberately a small grid, not an MLE fit; the configuration is stated so
 the comparison is reproducible. Croston/SBA is worse than the historical mean on this data
@@ -192,9 +192,9 @@ cannot inflate the first smoothed interval (regression-tested).
 
 ---
 
-## D10 — Poisson GLM with log1p count features, not a negative-binomial GLM
+## D10 - Poisson GLM with log1p count features, not a negative-binomial GLM
 
-**Context.** The charter suggests "negative binomial GLM … or a Poisson GLM with overdispersion".
+**Context.** The specification suggests "negative binomial GLM … or a Poisson GLM with overdispersion".
 scikit-learn has no negative-binomial GLM; statsmodels would add a dependency and a much slower
 per-origin fit.
 
@@ -219,9 +219,9 @@ different, larger model and was not attempted.
 
 ---
 
-## D11 — Two LightGBM objectives: Tweedie for the mean, quantile-0.5 for the median
+## D11 - Two LightGBM objectives: Tweedie for the mean, quantile-0.5 for the median
 
-**Context.** The charter suggests "LightGBM quantile regression (P10/P50/P90) or LightGBM with
+**Context.** The specification suggests "LightGBM quantile regression (P10/P50/P90) or LightGBM with
 Tweedie/Poisson objective, plus conformal calibration".
 
 **Decision.** Fit two global models on identical rows and features:
@@ -235,7 +235,7 @@ Both use 400 estimators, learning rate 0.04, 31 leaves, `min_child_samples=50`, 
 **Alternatives.** Three separate quantile LightGBM models at 0.1/0.5/0.9 (triple the training
 cost, quantile crossing is possible, and the conformal layer already supplies calibrated
 quantiles); a Poisson objective (Tweedie 1.3 handles the overdispersion better in practice); a
-single model with SKU embeddings (the charter calls it optional; no evidence it earns its keep at
+single model with SKU embeddings (the specification calls it optional; no evidence it earns its keep at
 this history length).
 
 **Consequence.** The median model has the best MASE (0.686) and the second-worst aggregate WAPE
@@ -246,7 +246,7 @@ presented as universally better.
 
 ---
 
-## D12 — Variance-stabilising scale `sqrt(μ + 0.25)` plus Mondrian conformal
+## D12 - Variance-stabilising scale `sqrt(μ + 0.25)` plus Mondrian conformal
 
 **Context.** All models need P10/P50/P90 and a cumulative distribution for the newsvendor. The
 models have different scales and different biases, so a model-specific parametric distribution
@@ -264,7 +264,7 @@ The same layer is applied to every model, so the accuracy and decision compariso
 quality of the conditional mean/median.
 
 **Alternatives.**
-- NB2 variance `μ + αμ²` with global α: rejected — see D10; collapsed the median and destroyed
+- NB2 variance `μ + αμ²` with global α: rejected - see D10; collapsed the median and destroyed
   coverage.
 - A parametric Poisson/NB predictive distribution: would impose a variance-mean relationship that
   the data rejects (overdispersion varies by class).
@@ -282,7 +282,7 @@ README §4. The layer is marginal within class, not SKU-conditional (LIMITATIONS
 
 ---
 
-## D13 — 13-week calibration window, realised targets only
+## D13 - 13-week calibration window, realised targets only
 
 **Context.** The conformal window must be long enough to estimate 199 quantiles per class/horizon
 but short enough to stay local and avoid using post-origin information.
@@ -304,7 +304,7 @@ but can make a small class borrow the pooled shape. ACI or a longer window is th
 
 ---
 
-## D14 — Separate conformal grid for cumulative L-week demand
+## D14 - Separate conformal grid for cumulative L-week demand
 
 **Context.** The newsvendor needs `F_L`, the distribution of `Σ_{h=1..L} y_h`, not the sum of L
 marginal quantiles (which assumes perfect dependence and ignores the correlation of residuals
@@ -329,9 +329,9 @@ decision-model limitation (LIMITATIONS §3.1).
 
 ---
 
-## D15 — Cost model: 1% of unit price per week, ratios {1,3,9,19}, lead times {2,4,8}
+## D15 - Cost model: 1% of unit price per week, ratios {1,3,9,19}, lead times {2,4,8}
 
-**Context.** The data has no costs. The charter requires a newsvendor with underage/overage costs
+**Context.** The data has no costs. The specification requires a newsvendor with underage/overage costs
 and an explicit sweep.
 
 **Decision.**
@@ -371,8 +371,8 @@ best baseline is **SES point** in all 168 rows, and the best quantile policy bea
 cells (`headline.decision.baseline_comparison`). The oracle orders realised demand and has zero
 cost by construction; it is reported as a bound, not a policy.
 
-**Alternatives.** A fixed baseline (e.g. historical mean) — makes the result depend on an arbitrary
-weak comparator; the company's actual policy — not in the data; the best *probabilistic* baseline —
+**Alternatives.** A fixed baseline (e.g. historical mean) - makes the result depend on an arbitrary
+weak comparator; the company's actual policy - not in the data; the best *probabilistic* baseline  - 
 would conflate the value of the distribution with the value of the model.
 
 **Consequence.** Choosing the best baseline on the evaluation cells makes the comparison
@@ -383,7 +383,7 @@ labelled clairvoyant and its zero cost is not an achievable result. A second, st
 is also recorded: the **cheapest point rule in each cell**. At the central case that is LightGBM
 Tweedie point, and the SES quantile saves **18.62%** against it
 (`headline.decision.central_case_quantile.savings_vs_best_point_all_pct`). The identity of that
-rule changes with the cell — LightGBM median at `Cu/Co = 1`, LightGBM Tweedie above it — which is
+rule changes with the cell - LightGBM median at `Cu/Co = 1`, LightGBM Tweedie above it - which is
 why the docs call it "the cheapest point rule in the cell", not "the strongest model".
 
 The 23.82% headline is itself the best of the seven quantile models in the central cell, selected
@@ -393,7 +393,7 @@ pre-registered point estimate; the bootstrap CI is conditional on the selected c
 
 ---
 
-## D17 — Bootstrap over SKUs, 500 reps, fixed seed
+## D17 - Bootstrap over SKUs, 500 reps, fixed seed
 
 **Context.** The saving is a mean over heterogeneous SKUs; a CI is needed, but the origins are
 correlated and there are only three of them.
@@ -419,10 +419,10 @@ bound 1/10,001). It is a cost-bootstrap test, not a Diebold–Mariano test on fo
 
 ---
 
-## D18 — Bulk sensitivity on the accuracy side only
+## D18 - Bulk sensitivity on the accuracy side only
 
 **Context.** Bulk orders are 20.46% of units from the top 1% of invoices and dominate absolute
-errors. The charter asks whether excluding them changes conclusions.
+errors. The specification asks whether excluding them changes conclusions.
 
 **Decision.** For accuracy, exclude an evaluation week if its demand exceeds the SKU's **training**
 p99.5 at that origin (floor 1 unit), then recompute MASE for every model with the same MASE scale
@@ -441,9 +441,9 @@ decision-side rerun is the first item of next work.
 
 ---
 
-## D19 — Cold-start split at <26 vs ≥26 positive weeks before each origin
+## D19 - Cold-start split at <26 vs ≥26 positive weeks before each origin
 
-**Context.** The charter asks for cold-start performance and says not to hide it in the average.
+**Context.** The specification asks for cold-start performance and says not to hide it in the average.
 The model sample requires ≥12 positive weeks, so the cold bucket cannot include 0–11.
 
 **Decision.** At each origin, split SKUs by the number of positive weeks in their history:
@@ -451,7 +451,7 @@ The model sample requires ≥12 positive weeks, so the cold bucket cannot includ
 (`outputs/tables/cold_start.csv`). At the first origin, 880 of 3,186 SKUs are cold (12–25 weeks).
 
 **Alternatives.** A fixed calendar age (new SKUs cannot be identified reliably before their first
-sale); a <52-week split (almost everyone is cold at the first origin); no split (the charter
+sale); a <52-week split (almost everyone is cold at the first origin); no split (the specification
 explicitly forbids hiding them).
 
 **Consequence.** Cold-start SKUs are reported separately, not averaged away. LightGBM median is
@@ -461,7 +461,7 @@ that is a limitation.
 
 ---
 
-## D20 — Exclude near-deterministic SKUs from MASE, identically everywhere
+## D20 - Exclude near-deterministic SKUs from MASE, identically everywhere
 
 **Context.** MASE divides by the SKU's in-sample naive MAE. For a deterministic or almost constant
 series the denominator approaches zero and the ratio explodes.
@@ -472,7 +472,7 @@ coverage still use all observations.
 
 **Alternatives.** Add a floor to the denominator (arbitrary and still unstable); winsorise the
 ratio (hides which observations are affected); drop MASE (loses the scale-free comparison the
-charter requires).
+specification requires).
 
 **Consequence.** Two h=1 observations are excluded. The earlier bulk table did not apply the same
 exclusion, which produced MASE values around 1e3–1e4; that was an artefact and was fixed. The
@@ -480,9 +480,9 @@ accuracy and bulk tables are now comparable.
 
 ---
 
-## D21 — Figure choices: representative SKUs and a clipped cost axis
+## D21 - Figure choices: representative SKUs and a clipped cost axis
 
-**Context.** The charter requires at least five figures, including forecast-vs-actual for
+**Context.** The specification requires at least five figures, including forecast-vs-actual for
 fast/medium/slow SKUs, calibration, cost vs cost ratio, and error by demand class.
 
 **Decision.**
@@ -498,7 +498,7 @@ fast/medium/slow SKUs, calibration, cost vs cost ratio, and error by demand clas
 
 **Alternatives.** Pick the most extreme SKUs (dramatic but unrepresentative); plot all models on
 an unclipped axis (seasonal naive compresses every other line); show only 5 worst SKUs (the
-charter asks for 20).
+specification asks for 20).
 
 **Consequence.** `fig2` and `fig7` use test-window information for **display** selection; no
 reported metric depends on them. The clipping is annotated so the seasonal-naive failure is not
@@ -506,7 +506,7 @@ hidden. Figures are descriptive, not inferential.
 
 ---
 
-## D22 — Tests assert invariants and the contract, not the headline numbers
+## D22 - Tests assert invariants and the contract, not the headline numbers
 
 **Context.** A test suite that hard-codes today's MASE would fail on every legitimate model change
 and would not catch the failures that matter (leakage, broken spine, bad accounting).
@@ -521,7 +521,7 @@ and would not catch the failures that matter (leakage, broken spine, bad account
 7. quantiles are monotone and non-negative;
 8. h=1 coverage and lower/upper-tail frequencies are in a broad ballpark;
 9. newsvendor accounting identities (`total = holding + stockout`, fill/service in [0,1]);
-10. the decision sweep covers the charter grid;
+10. the decision sweep covers the specification grid;
 11. `results.json` has the contract keys, 7 models, 171 decision rows, 3,186 SKUs;
 12. the headline best-MASE model matches the table and the central case is L=4, ratio 9;
 13. docs, `requirements.txt` and ≥5 non-empty figures exist;
@@ -540,18 +540,18 @@ and would not catch the failures that matter (leakage, broken spine, bad account
     chunked test bootstrap matches a one-shot count of replicates.
 
 **Alternatives.** A golden-master regression on every number (brittle, and would freeze bugs); no
-tests (fails the charter); only smoke tests (would not catch leakage).
+tests (fails the specification); only smoke tests (would not catch leakage).
 
 **Consequence.** The suite catches structural breakage, not small metric drift. The README numbers
 are checked against `results.json` manually at release. The leakage test is stronger than the
-charter's "assert max feature date < forecast origin": it perturbs all post-origin weeks and
+specification's "assert max feature date < forecast origin": it perturbs all post-origin weeks and
 compares every feature, with `rtol=1e-9, atol=1e-9` to tolerate floating-point summation order.
 
 ---
 
-## D23 — One orchestrator, `results.json` as the single source of truth
+## D23 - One orchestrator, `results.json` as the single source of truth
 
-**Context.** The charter requires one command to rebuild everything and every README number to be
+**Context.** The specification requires one command to rebuild everything and every README number to be
 pipeline-generated.
 
 **Decision.** `src/run_all.py` runs each stage in a separate process (`download`, `clean`,
@@ -579,7 +579,7 @@ instead of implying otherwise. A release run is made from a clean tree, where `g
 
 ---
 
-## D24 — Deliberately not built
+## D24 - Deliberately not built
 
 These are scope decisions, not oversights:
 
@@ -599,7 +599,7 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
 
 ---
 
-## D25 — Resolved blockers and open items
+## D25 - Resolved blockers and open items
 
 **Resolved during the build.**
 - **Audit did not reconcile.** The first six filters left 1,003,214 rows, but the panel started at
@@ -657,7 +657,7 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
 | D4 | Explicit non-product list + regex | Description filter only | Misses plausible codes |
 | D5 | 104 complete ISO weeks | Keep partial weeks | Boundary bias |
 | D6 | ≥8 panel, ≥12 pre-origin model | ≥26 model sample | Preserves cold start |
-| D7 | Origins 77/85/93 | Random split | Charter, no leakage |
+| D7 | Origins 77/85/93 | Random split | Specification, no leakage |
 | D8 | h=1…8; report 1/2/4; decide 2/4/8 | Sum marginal quantiles | Within-window dependence |
 | D9 | Four fixed baselines | Tuned per-SKU models | Reproducibility, overfitting |
 | D10 | Poisson GLM, log1p counts | NB2 GLM | NB2 α collapsed coverage |
@@ -669,7 +669,7 @@ Each appears in LIMITATIONS.md with its consequence and the cheapest credible fi
 | D16 | Save vs best simple point rule; also vs cheapest point rule in each cell | Fixed weak baseline | Conservative comparators, both reported |
 | D17 | 500-rep SKU bootstrap | Origin bootstrap | Only 3 origins |
 | D18 | Bulk trim accuracy only | Trim decisions too | Not like-for-like |
-| D19 | Cold split <26 vs ≥26 | No split | Charter |
+| D19 | Cold split <26 vs ≥26 | No split | Specification benchmark |
 | D20 | MASE scale ≥0.01, everywhere | Floor the denominator | Transparency |
 | D21 | Representative SKUs, clipped axis | Extreme SKUs | Honest display |
 | D22 | Invariant tests | Golden master | Catches structural bugs |

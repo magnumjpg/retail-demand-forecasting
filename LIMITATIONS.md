@@ -11,7 +11,7 @@ inventory policy, and none of the cost numbers are a claim about the retailer's 
 
 ## 1. Data limitations
 
-### 1.1 Demand is censored — there is no stockout data
+### 1.1 Demand is censored - there is no stockout data
 
 The dataset records **sales**, not demand. A zero SKU-week may mean no customer, no stock, a
 delisted item, or a data gap. We cannot separate them.
@@ -32,7 +32,7 @@ model (e.g. a Tobit/latent-demand likelihood). Neither is in Online Retail II.
 `Co = 1% × unit price × L` per unit held over the cover, `Cu = (Cu/Co) × Co` with ratios
 `{1, 3, 9, 19}`, and lead times `{2, 4, 8}` weeks are **invented for the sweep**. Unit price is the
 SKU's median observed price **over weeks up to each forecast origin**, winsorised at p99.5, used as
-a proxy for value — not the purchase cost, margin, or salvage value. Using pre-origin prices keeps
+a proxy for value - not the purchase cost, margin, or salvage value. Using pre-origin prices keeps
 the cost vector free of evaluation-window information; costing the same orders with the full-sample
 median changes the central saving only from 23.82% to 23.77% (vs SES) and 18.62% to 18.41% (vs the
 cheapest point rule), so that choice is not driving the result.
@@ -57,8 +57,8 @@ Seasonal naive has to reuse a single lag-52 observation; the two Decembers in th
 There are only three forecast origins.
 
 **Consequence.** Seasonal naive is a weak baseline by construction (MASE **1.723** at h=1), and no
-claim about annual seasonality is identified. A model that needs several years of history — or a
-neural seasonal model — cannot be fairly evaluated here. Regime change (the 2008–09 recession is
+claim about annual seasonality is identified. A model that needs several years of history - or a
+neural seasonal model - cannot be fairly evaluated here. Regime change (the 2008–09 recession is
 outside the window, but the retailer's assortment changes inside it) is not modelled.
 
 **What would fix it.** More years of the same SKU universe, or a hierarchical seasonal model with
@@ -118,7 +118,7 @@ audit in `DATA.md` makes such a variant cheap to add.
 
 ### 2.1 Three adjacent origins are not three independent samples
 
-The origins are **2011-05-30**, **2011-07-25** and **2011-09-19** — adjacent 8-week blocks inside
+The origins are **2011-05-30**, **2011-07-25** and **2011-09-19** - adjacent 8-week blocks inside
 the last 26 weeks. At h=1 they contribute target weeks 78, 86 and 94, not a continuous 26-week
 path; longer horizons fill some gaps. The same SKUs appear at all origins, and the origins share
 history.
@@ -139,7 +139,7 @@ positive weeks **before the first origin** (**3,186**). SKUs with 8–11 positiv
 in the panel but no metric describes them. The cold-start split covers the retained SKUs with
 **12–25** positive weeks (**880** at the first origin); SKUs below 12 are outside it.
 
-**Consequence.** The headline accuracy and savings do not apply to the newest or rarest SKUs — the
+**Consequence.** The headline accuracy and savings do not apply to the newest or rarest SKUs - the
 population where a cold-start policy is most needed. Excluding them is not hidden inside an
 average, but it does mean the reported result is conditional on a minimum history. Selection uses
 only pre-origin data, so it avoids survivor bias from future sales, but it is still a selection
@@ -169,7 +169,7 @@ searches a five-point α grid; Croston uses α=0.1. No hyperparameter is tuned o
 and there is no nested cross-validation.
 
 **Consequence.** The ML models may be under- or over-regularised for this dataset. The comparison
-is honest — every model gets the same origins and rows — but it is a comparison of **these
+is honest - every model gets the same origins and rows - but it is a comparison of **these
 configurations**, not of model classes at their best. LightGBM's loss to SES at the central
 decision cell could shrink with tuning; it could also worsen. The project does not claim
 "LightGBM cannot beat SES".
@@ -203,7 +203,7 @@ decisions.
 
 ### 2.6 Accuracy is reported at h = 1, 2, 4; decisions use L = 2, 4, 8
 
-The charter asks for 1, 2 and 4 weeks. The decision analysis adds L=8, whose cumulative quantiles
+The specification asks for 1, 2 and 4 weeks. The decision analysis adds L=8, whose cumulative quantiles
 rely on h=5–8 forecasts that are **not** in the accuracy tables. The cumulative conformal grid is
 built for L=2, 4, 8 and is not the sum of marginal quantiles.
 
@@ -216,7 +216,7 @@ longer horizons are evaluated.
 
 ### 2.7 No CRPS, no formal model-comparison test
 
-The charter says "CRPS if feasible". It is not computed. The project reports pinball loss at
+The specification says "CRPS if feasible". It is not computed. The project reports pinball loss at
 P10/P50/P90 and 80% coverage instead, plus a calibration curve. There is no paired test of
 predictive accuracy and no correction for multiple comparisons across seven models and three
 horizons.
@@ -266,8 +266,8 @@ are choices made after seeing the same evaluation table.
 company's current policy". A real incumbent could be better or worse. A stronger post-hoc
 comparator is recorded as well: the **cheapest point rule in each cell**. At the central case that
 is LightGBM Tweedie point, and the SES quantile saves **18.62%** against it. The identity of that
-rule is itself selected on the evaluation table — LightGBM median at `Cu/Co = 1`, LightGBM Tweedie
-above it — so "cheapest point rule in this cell" is a same-vintage, post-hoc comparator, not a
+rule is itself selected on the evaluation table - LightGBM median at `Cu/Co = 1`, LightGBM Tweedie
+above it - so "cheapest point rule in this cell" is a same-vintage, post-hoc comparator, not a
 pre-registered model. The oracle (order realised demand, zero cost) is a bound, not an achievable
 policy, and is labelled as such.
 
