@@ -1,12 +1,14 @@
-# Forecasting sparse demand
+# Forecasting Sparse Demand
 
-[![CI](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml) [![tests](https://img.shields.io/badge/tests-24%20passed-brightgreen)](#) [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Data](https://img.shields.io/badge/data-UCI%20Online%20Retail%20II-informational)](DATA.md)
+*Probabilistic SKU forecasts and inventory cost on UCI Online Retail II.*
 
-[Resumen en español](#resumen-en-español) · [Method](METHOD.md) · [Limitations](LIMITATIONS.md) · [Decisions](DECISIONS.md)
+[![CI](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml/badge.svg)](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml) [![tests](https://img.shields.io/badge/tests-24%20passed-brightgreen)](https://github.com/magnumjpg/retail-demand-forecasting/actions/workflows/ci.yml) [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Data](https://img.shields.io/badge/data-UCI%20Online%20Retail%20II-informational)](DATA.md)
 
-**Calibrated quantile forecasts cut total inventory cost by 23.82% in the central case - and lose to a point rule when holding costs as much as a stockout.**
+**English** · [Español](#resumen-en-español) · [Data](DATA.md) · [Method](METHOD.md) · [Limitations](LIMITATIONS.md) · [Decisions](DECISIONS.md)
 
-*UCI Online Retail II · 104 ISO weeks (2009-12-07 → 2011-11-28) · 3,186 model SKUs · 3 rolling origins · 24 tests*
+**Calibrated quantile forecasts cut total inventory cost by 23.82% in the central case, and lose to a point rule when holding costs as much as a stockout.**
+
+*UCI Online Retail II · 104 ISO weeks (2009-12-07 to 2011-11-28) · 3,186 model SKUs · 3 rolling origins · 24 tests*
 
 ---
 
@@ -15,13 +17,29 @@
 - **Question:** do calibrated probabilistic SKU forecasts reduce inventory cost relative to point forecasts?
 - **Data:** 972,068 cleaned UCI Online Retail II line items, aggregated to 3,995 SKUs × 104 ISO weeks; the model sample is 3,186 SKUs with at least 12 positive pre-origin weeks, three rolling origins and a 26-week test window.
 - **Method:** seven point models plus a shared Mondrian conformal layer, evaluated in a 3 lead-time × 4 cost-ratio newsvendor grid.
-- **Headline:** at the central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95% bootstrap CI **21.20–26.18%**, conditional on that cell).
+- **Headline:** at the central cell (L=4, `Cu/Co=9`) the SES quantile rule saves **23.82%** versus SES point (95% bootstrap CI **21.20% to 26.18%**, conditional on that cell).
 - **Caveat:** the reported model is selected ex post inside the central cell (a reporting convention, not the best cell); the best quantile model per cell ranges from **2.43%** to **48.81%**, and at `Cu/Co=1` the SES quantile rule loses to the cheapest point rule.
 
-This study assesses whether calibrated probabilistic forecasts reduce inventory cost under a newsvendor replenishment policy. It asks whether calibrated probabilistic
-forecasts reduce inventory cost under a newsvendor policy, and where the approach breaks.
+This study assesses whether calibrated probabilistic forecasts reduce inventory cost under a newsvendor replenishment policy, and where the approach breaks.
 Every number below is a field of [`outputs/results.json`](outputs/results.json); the file is
-assembled by `src/run_all.py` from the pipeline artefacts, never typed into the docs by hand.
+assembled by `src/run_all.py` from the pipeline artifacts, never typed into the docs by hand.
+
+## Contents
+
+- [1. The answer in one page](#1-the-answer-in-one-page)
+- [2. Data at a glance](#2-data-at-a-glance)
+- [3. Point accuracy at one week](#3-point-accuracy-at-one-week)
+- [4. Calibration](#4-calibration)
+- [5. Decision value](#5-decision-value)
+- [6. Where it fails](#6-where-it-fails)
+- [7. What this does not prove](#7-what-this-does-not-prove)
+- [8. Literature and positioning](#8-literature-and-positioning)
+- [9. Reproduce](#9-reproduce)
+- [10. Repository layout](#10-repository-layout)
+- [11. Assumptions register](#11-assumptions-register)
+- [License](#license)
+- [Author](#author)
+- [Resumen en español](#resumen-en-español)
 
 ## 1. The answer in one page
 
@@ -79,25 +97,25 @@ assembled by `src/run_all.py` from the pipeline artefacts, never typed into the 
 |---|---:|---|
 | Raw rows (both sheets) | 1,067,371 | `data.raw_rows_two_sheets` |
 | Rows after cleaning | 972,068 (**91.07%**) | `data.rows_after_cleaning` |
-| Complete ISO weeks | 104 (2009-12-07 → 2011-11-28) | `data.weeks_total`, `data.weeks_first/last` |
+| Complete ISO weeks | 104 (2009-12-07 to 2011-11-28) | `data.weeks_total`, `data.weeks_first/last` |
 | Cancellation rows (separated, never netted) | 19,104 rows, −476,819 units | `data.cancellations` |
 | SKUs after cleaning / universe / model sample | 4,675 / 3,995 / 3,186 | `data.skus_after_cleaning`, `n_model_skus` |
 | Zero-demand SKU-weeks (model sample) | **46.93%** | `data.zero_demand_share_model_skus` |
 | Top 1% invoices' share of units | **20.46%** | `data.bulk_orders.top_1pct_invoice_share_units` |
 | Largest single invoice | 87,167 units | `data.bulk_orders.largest_invoice_units` |
 
-The two partial calendar weeks (2009-11-30 and 2011-12-05) are dropped. The modelling sample
+The two partial calendar weeks (2009-11-30 and 2011-12-05) are dropped. The modeling sample
 requires **≥12 positive weeks before the first origin** (3,186 of 3,995 universe SKUs); the
 selection is frozen on pre-origin data. See [DATA.md](DATA.md) for the full row/revenue audit.
 
 Backtest: origins **2011-05-30**, **2011-07-25**, **2011-09-19**; 26-week test window;
 3,186 SKUs × 3 origins = **9,558** SKU-week observations per horizon. Models are fitted only up
-to `origin − 13 weeks`; the 13-week conformal window uses only targets realised by the origin.
+to `origin - 13 weeks`; the 13-week conformal window uses only targets realized by the origin.
 For a cumulative `L`-week grid, a calibration origin enters only when its whole window is
-realised (`t + L ≤ origin`), so 12 calibration origins are usable at h=1 and 11 / 9 / 5 at
+realized (`t + L ≤ origin`), so 12 calibration origins are usable at h=1 and 11 / 9 / 5 at
 `L = 2 / 4 / 8`; partial windows are never mixed into a cumulative residual grid.
 
-## 3. Point accuracy at h = 1
+## 3. Point accuracy at one week
 
 Same 9,558 SKU-weeks for every model. MASE is scaled by each SKU's in-sample seasonal-naive
 MAE; two observations with scale < 0.01 are excluded (deterministic series), because a
@@ -145,34 +163,34 @@ in [LIMITATIONS.md](LIMITATIONS.md).
 | intermittent | 0.978 | 1.173 | **0.786** | 2.628 |
 
 LightGBM median wins every class. LightGBM Tweedie loses to SES in every class. Croston/SBA is
-the worst model in the intermittent class - the case it is designed for - which is a legitimate
-finding, not a bug: SBA smooths towards a stable inter-arrival rate that this retailer does not
-have. Cold-start SKUs (12–25 positive weeks at the first origin, **880** SKUs) are shown
+the worst model in the intermittent class (the case it is designed for), which is a legitimate
+finding, not a bug: SBA smooths toward a stable inter-arrival rate that this retailer does not
+have. Cold-start SKUs (12-25 positive weeks at the first origin, **880** SKUs) are shown
 separately: LightGBM median **0.558** vs SES **0.818** vs Croston **3.689**; SES is essentially
 unchanged from the warm group (**0.819**).
 
 ## 4. Calibration
 
-Intervals are produced by one shared layer: standardise residuals as
+Intervals are produced by one shared layer: standardize residuals as
 `z = (y − μ) / sqrt(μ + 0.25)`, take empirical quantiles of `z` on the 13-week pre-origin
 window **separately per demand class** (Mondrian conformal), then map back. The `+0.25` keeps
 the scale finite at μ = 0.
 
 | Check (h=1, all models) | Result | Target |
 |---|---:|---:|
-| Empirical coverage of P10–P90 | **0.778 – 0.806** | 0.80 |
-| `P(y < q10)` | **0.084 – 0.135** | 0.10 |
-| `P(y ≤ q90)` | **0.888 – 0.914** | 0.90 |
-| `P(y ≤ q10)` (descriptive only) | 0.521 – 0.581 | - |
+| Empirical coverage of P10-P90 | **0.778 to 0.806** | 0.80 |
+| `P(y < q10)` | **0.084 to 0.135** | 0.10 |
+| `P(y ≤ q90)` | **0.888 to 0.914** | 0.90 |
+| `P(y ≤ q10)` (descriptive only) | 0.521 to 0.581 | n/a |
 
 The last row is not a failure: **46.9%** of demands are exactly zero, so the CDF has a large
 atom. If `q10` is also zero, then `P(y ≤ q10)` includes the whole atom; the meaningful lower-tail
-check is strict `<`. At h=1, coverage sits at or just below the 80% target (0.778–0.806); at
-longer horizons it becomes over-covered (h=2: 0.792–0.874; h=4: 0.798–0.914), because the marginal
+check is strict `<`. At h=1, coverage sits at or just below the 80% target (0.778 to 0.806); at
+longer horizons it becomes over-covered (h=2: 0.792 to 0.874; h=4: 0.798 to 0.914), because the marginal
 conformal grid widens with horizon while the zero atom does not move. Figure
 `fig3_calibration.png` plots central-interval coverage curves.
 
-![Figure 3 - Interval calibration](outputs/figures/fig3_calibration.png)
+![Figure 3. Interval calibration](outputs/figures/fig3_calibration.png)
 
 *Figure 3. Empirical coverage of central prediction intervals at h = 1, all origins. The diagonal is perfect calibration; most models sit above it, so the intervals are conservative rather than overconfident. Source: `outputs/figures/fig3_calibration.png`.*
 
@@ -181,13 +199,13 @@ conformal grid widens with horizon while the zero atom does not move. Figure
 Newsvendor order for a lead time `L`: `Q = F⁻¹(CR)` with `CR = Cu / (Cu + Co)`,
 `Co = 1% × unit price × L` per week held, `Cu = (Cu/Co) × Co`. Unit price is the median
 observed price per SKU over weeks up to each forecast origin (no evaluation-window price
-information), winsorised at p99.5. **These are assumptions, swept explicitly; the absolute cost
+information), winsorized at p99.5. **These are assumptions, swept explicitly; the absolute cost
 level is not a claim about the company.** Two comparators are reported, because they answer
 different questions:
 
-- **vs best simple point rule** - SES in every cell; this is what the 500-rep bootstrap over
+- **vs best simple point rule**, SES in every cell; this is what the 500-rep bootstrap over
   SKUs estimates, so it carries a CI.
-- **vs cheapest point rule in each cell** - the lowest-cost point policy among all seven models.
+- **vs cheapest point rule in each cell**, the lowest-cost point policy among all seven models.
   That rule is LightGBM-Tweedie at the central case and LightGBM-median at `Cu/Co = 1`, so the
   label does not name one model for the whole grid. No CI is claimed for this difference; the
   bootstrap is defined against SES.
@@ -196,21 +214,21 @@ different questions:
 
 | Policy | vs SES point | 95% CI | vs cheapest point rule | Fill rate | Avg inventory | Weeks of cover |
 |---|---:|---:|---:|---:|---:|---:|
-| **SES + conformal quantile** | **23.82%** | 21.20 – 26.18 | **18.62%** | 0.846 | 76.6 | 2.93 |
-| LightGBM Tweedie + conformal | 22.31% | 19.10 – 25.29 | 17.01% | 0.850 | 84.2 | 3.22 |
-| LightGBM median + conformal | 17.58% | 13.88 – 20.99 | 11.95% | 0.854 | 93.5 | 3.58 |
-| Poisson GLM + conformal | 10.50% | 7.10 – 13.60 | 4.39% | 0.811 | 80.4 | 3.08 |
-| LightGBM Tweedie point | 6.39% | 3.41 – 9.38 | 0.00% | 0.731 | 32.4 | 1.24 |
-| Croston/SBA + conformal | 4.36% | 0.23 – 8.31 | −2.17% | 0.801 | 92.8 | 3.55 |
-| Historical mean + conformal | −1.88% | −7.03 – 2.92 | −8.84% | 0.780 | 95.8 | 3.67 |
-| SES point (baseline) | 0.00% | - | −6.82% | 0.710 | 29.9 | 1.15 |
-| LightGBM median point | −39.01% | −43.67 – −35.07 | −48.49% | 0.547 | 8.0 | 0.31 |
-| Seasonal naive + conformal | −129.84% | −151.48 – −111.72 | −145.53% | 0.845 | 408.0 | 15.62 |
+| **SES + conformal quantile** | **23.82%** | 21.20 to 26.18 | **18.62%** | 0.846 | 76.6 | 2.93 |
+| LightGBM Tweedie + conformal | 22.31% | 19.10 to 25.29 | 17.01% | 0.850 | 84.2 | 3.22 |
+| LightGBM median + conformal | 17.58% | 13.88 to 20.99 | 11.95% | 0.854 | 93.5 | 3.58 |
+| Poisson GLM + conformal | 10.50% | 7.10 to 13.60 | 4.39% | 0.811 | 80.4 | 3.08 |
+| LightGBM Tweedie point | 6.39% | 3.41 to 9.38 | 0.00% | 0.731 | 32.4 | 1.24 |
+| Croston/SBA + conformal | 4.36% | 0.23 to 8.31 | −2.17% | 0.801 | 92.8 | 3.55 |
+| Historical mean + conformal | −1.88% | −7.03 to 2.92 | −8.84% | 0.780 | 95.8 | 3.67 |
+| SES point (baseline) | 0.00% | n/a | −6.82% | 0.710 | 29.9 | 1.15 |
+| LightGBM median point | −39.01% | −43.67 to −35.07 | −48.49% | 0.547 | 8.0 | 0.31 |
+| Seasonal naive + conformal | −129.84% | −151.48 to −111.72 | −145.53% | 0.845 | 408.0 | 15.62 |
 
 At the central case the quantile policy raises fill from **71.0%** (SES point) to **84.6%** and
 cuts stockouts, at the cost of more inventory. Holding cost is 66,435.28 and stockout cost
 92,918.61 of the SES-quantile total 159,353.89; under this cost ratio the stockout side still
-dominates. Against the cheapest point rule in the cell - LightGBM Tweedie point - the SES
+dominates. Against the cheapest point rule in the cell (LightGBM Tweedie point), the SES
 quantile still saves **18.62%**. Note that ordering the **median** (LightGBM median point) has a
 fill rate of only **54.7%** and destroys value: a good MASE is not a good ordering rule.
 
@@ -233,7 +251,7 @@ rule falls to +0.54% at ratio 3, so its gain is not a stable asymmetry result.
 policy saves **−7.70%** (L=2), **−10.76%** (L=4) and **−1.54%** (L=8) at `Cu/Co = 1`, and
 **+0.18%**, **−1.47%**, **+1.82%** at ratio 3. The 23.82% headline is a high-asymmetry result, not
 a general one. `fig4_cost_vs_ratio.png` shows both comparators: the top row is versus SES point
-with the bootstrap CI, the bottom row is versus the cheapest point rule in each cell as point
+with the bootstrap CI; the bottom row is versus the cheapest point rule in each cell as point
 estimates only.
 
 Best cell per lead time (all at `Cu/Co = 19`, versus SES point / versus cheapest point rule):
@@ -241,7 +259,7 @@ L=2 **39.31%** [36.35, 42.56] / **33.99%**, L=4 **43.12%** [39.89, 45.97] / **38
 **48.81%** [46.36, 51.18] / **46.96%**. Higher lead times need more cover, so a distribution matters
 more; they also carry more inventory and a larger absolute cost.
 
-![Figure 4 - Decision value versus cost ratio](outputs/figures/fig4_cost_vs_ratio.png)
+![Figure 4. Decision value versus cost ratio](outputs/figures/fig4_cost_vs_ratio.png)
 
 *Figure 4. Cost saving of each quantile policy against the cost ratio Cu/Co, for lead times of 2, 4 and 8 weeks. The top row compares with the best simple point rule (SES); the bottom row compares with the cheapest point rule in each cell. Shaded bands are 95% bootstrap intervals over SKUs. Source: `outputs/figures/fig4_cost_vs_ratio.png`.*
 
@@ -269,11 +287,11 @@ not enough for a seasonal model, and we do not claim otherwise.
 
 **Cold start.** SKUs with fewer than 12 positive pre-origin weeks are excluded from the model
 sample (3,482 SKUs pass ≥8, 3,186 pass ≥12 at the first origin). Among those retained, 880 have
-12–25 positive weeks. LightGBM median is strongest there (MASE 0.558), but this is also where
+12-25 positive weeks. LightGBM median is strongest there (MASE 0.558), but this is also where
 the median's under-forecasting is most dangerous for ordering; the backtest does not measure
 the cost of cold-start SKUs separately, which is a limitation.
 
-![Figure 7 - The twenty costliest SKUs](outputs/figures/fig7_worst_skus.png)
+![Figure 7. The twenty costliest SKUs](outputs/figures/fig7_worst_skus.png)
 
 *Figure 7. Weekly demand histories of the 20 SKUs with the largest newsvendor cost at the central case (L = 4, Cu/Co = 9, LightGBM quantile policy). Source: `outputs/figures/fig7_worst_skus.png`.*
 
@@ -295,7 +313,7 @@ the cost of cold-start SKUs separately, which is a limitation.
   18.41% (vs the cheapest point rule), so the no-look-ahead choice is not producing the result.
   It is still an observed selling price, not a purchase cost.
 - **Conformal windows shrink with the horizon.** A cumulative `L`-week grid keeps only
-  calibration origins whose whole window is realised: 11 / 9 / 5 origins at L = 2 / 4 / 8,
+  calibration origins whose whole window is realized: 11 / 9 / 5 origins at L = 2 / 4 / 8,
   against 12 at h=1. The L=8 tails therefore rest on five overlapping windows, and that is one
   reason to treat the L=8 saving as the least stable in the grid.
 - **Short history and three origins.** 104 weeks, three rolling origins in adjacent 8-week
@@ -312,7 +330,7 @@ the cost of cold-start SKUs separately, which is a limitation.
   prototype, not a deployed policy.
 - **MASE denominators.** MASE is undefined for deterministic series; two observations are
   excluded. Results for very smooth SKUs should not be read as if the denominator were stable.
-- **The "oracle" is clairvoyant.** It orders realised demand and has zero cost by construction;
+- **The "oracle" is clairvoyant.** It orders realized demand and has zero cost by construction;
   it is a bound, not an achievable policy.
 
 ## 8. Literature and positioning
@@ -324,7 +342,7 @@ works that inform the design; it does not claim to extend them.
   Research Quarterly* 23(3).** The original size/interval decomposition that `croston_sba`
   implements; our result is that it does not help on this retailer's demand.
 - **Syntetos & Boylan (2005), "The Accuracy of Intermittent Demand Estimates",
-  *International Journal of Forecasting* 21(2).** Motivates the Syntetos–Boylan bias correction
+  *International Journal of Forecasting* 21(2).** Motivates the Syntetos-Boylan bias correction
   `(1 − α/2)` and the use of intermittent-demand baselines rather than a straw man.
 - **Hyndman, Koehler, Snyder & Grose (2002), "A State Space Framework for Automatic Forecasting
   Using Exponential Smoothing Methods", *International Journal of Forecasting* 18(3).**
@@ -375,7 +393,7 @@ Individual stages: `python src/download_data.py`, `clean.py`, `backtest.py`, `de
 SKU-weeks; no future information in features (tested by perturbing every post-origin week);
 complete calendar spine; monotone quantiles; cumulative conformal grids built only from complete
 L-week windows; cost vector priced from pre-origin data; compact 0…n−1 bootstrap index; cost
-accounting identities; `results.json` contract; 7 figures; the realised SKU set is compared
+accounting identities; `results.json` contract; 7 figures; the realized SKU set is compared
 across models in all 24 origin × horizon cells (3,186 SKUs per cell); **24 tests**.
 
 ## 10. Repository layout
@@ -419,7 +437,7 @@ across models in all 24 origin × horizon cells (3,186 SKUs per cell); **24 test
 
 Figures: intermittency and concentration (`fig1`); rolling forecast paths for a fast, medium and
 slow SKU (`fig2`); calibration (`fig3`); decision value vs cost ratio (`fig4`); MASE by demand
-class (`fig5`); service–inventory frontier (`fig6`); worst 20 SKUs (`fig7`).
+class (`fig5`); service-inventory frontier (`fig6`); worst 20 SKUs (`fig7`).
 
 ## 11. Assumptions register
 
@@ -429,8 +447,8 @@ class (`fig5`); service–inventory frontier (`fig6`); worst 20 SKUs (`fig7`).
 | Underage/overage ratios | 1, 3, 9, 19 | `config.COST_RATIOS` |
 | Lead times | 2, 4, 8 weeks | `config.LEAD_TIMES` |
 | Critical ratio | `Cu / (Cu + Co)` | `decision.py` |
-| Unit price | median observed per SKU up to each origin, winsorised p99.5 | `decision.price_vector` |
-| Conformal window | 13 candidate weeks, realised targets only; complete L-week windows for cumulative grids | `config.CALIB_WEEKS`, `backtest.aggregate_grids` |
+| Unit price | median observed per SKU up to each origin, winsorized p99.5 | `decision.price_vector` |
+| Conformal window | 13 candidate weeks, realized targets only; complete L-week windows for cumulative grids | `config.CALIB_WEEKS`, `backtest.aggregate_grids` |
 | Calibration | Mondrian by demand class, `sqrt(mu + 0.25)` scale | `models.py` |
 | Model sample | ≥12 positive weeks before first origin | `clean.py` |
 | Evaluation | 26-week test window, 3 origins, h=1/2/4 accuracy | `config.py` |
@@ -441,6 +459,14 @@ Dataset: Chen, D. (2012), *Online Retail II*, UCI Machine Learning Repository,
 `bcbe73b3…f2e980` (verified by `download_data.py` and recorded in `manifest.json`).
 See [DATA.md](DATA.md).
 
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+## Author
+
+Jaime Pérez. [GitHub](https://github.com/magnumjpg) · [LinkedIn](https://www.linkedin.com/in/jaime-p%C3%A9rez-656919237/) · [jaimeperezgms@gmail.com](mailto:jaimeperezgms@gmail.com)
+
 ---
 
 ## Resumen en español
@@ -449,7 +475,7 @@ Este proyecto pregunta si unos pronósticos probabilísticos bien calibrados red
 inventario frente a reglas de pedido puntuales. Sobre 3.186 SKU y tres orígenes móviles, la regla
 de pedir el cuantil 0,90 de un pronóstico SES reduce el coste total un **23,82%** frente a la mejor
 regla puntual simple (SES) en el caso central (L=4, Cu/Co=9), con un intervalo bootstrap del
-**21,20%–26,18%**; frente a la regla puntual más barata de esa celda (LightGBM-Tweedie) la
+**21,20% a 26,18%**; frente a la regla puntual más barata de esa celda (LightGBM-Tweedie) la
 reducción sigue siendo del **18,62%**. En el punto más asimétrico de la malla (L=8, Cu/Co=19) el
 ahorro es del **48,81%** frente a SES puntual y del **46,96%** frente a la regla puntual más barata.
 El 23,82% es el mejor de los siete modelos de cuantiles dentro de la celda central, elegido ex post;
